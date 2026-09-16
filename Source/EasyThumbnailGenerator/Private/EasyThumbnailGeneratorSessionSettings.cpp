@@ -59,6 +59,26 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyPreset(EEasyThumbnailGenerator
     }
 }
 
+
+void UEasyThumbnailGeneratorSessionSettings::ApplyRenderSettings(
+    const FEasyThumbnailGeneratorRenderSettings& Settings,
+    EEasyThumbnailGeneratorPreset InPreset)
+{
+    Preset = InPreset;
+    OutputResolution = Settings.OutputResolution;
+    FramePaddingPercent = Settings.FramePaddingPercent;
+    ProjectionMode = Settings.ProjectionMode;
+    CameraYaw = Settings.CameraYaw;
+    CameraPitch = Settings.CameraPitch;
+    PerspectiveFOV = Settings.PerspectiveFOV;
+    DirectionalLightIntensity = Settings.DirectionalLightIntensity;
+    DirectionalLightYaw = Settings.DirectionalLightYaw;
+    DirectionalLightPitch = Settings.DirectionalLightPitch;
+    SkyLightIntensity = Settings.SkyLightIntensity;
+    bUseManualExposure = Settings.bUseManualExposure;
+    ExposureCompensation = Settings.ExposureCompensation;
+}
+
 FEasyThumbnailGeneratorRenderSettings UEasyThumbnailGeneratorSessionSettings::MakeRenderSettings() const
 {
     FEasyThumbnailGeneratorRenderSettings Settings;

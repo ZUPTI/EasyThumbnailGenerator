@@ -218,38 +218,49 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     const FBoxSphereBounds CenteredBounds(FVector::ZeroVector, SafeExtent, SafeExtent.Size());
 
     const float PaddingMultiplier = 1.0f + (FMath::Max(Settings.FramePaddingPercent, 0.0f) * 0.01f);
-    const FRotator CameraRotation(Settings.CameraPitch, Settings.CameraYaw, 0.0f);
-    const FVector CameraForward = CameraRotation.Vector();
 
-    float CameraDistance = MinimumCameraDistance;
+    FRotator CameraRotation(Settings.CameraPitch, Settings.CameraYaw, 0.0f);
+    FVector CameraLocation = FVector::ZeroVector;
     float OrthoWidth = 0.0f;
 
-    if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+    if (Settings.bUseExplicitCameraTransform)
     {
-        OrthoWidth = CalculateOrthoWidth(CenteredBounds, CameraRotation, PaddingMultiplier);
-
-        const FRotationMatrix CameraMatrix(CameraRotation);
-        const FVector CameraView = CameraMatrix.GetUnitAxis(EAxis::X);
-        const float HalfDepth =
-            FMath::Abs(CameraView.X) * SafeExtent.X +
-            FMath::Abs(CameraView.Y) * SafeExtent.Y +
-            FMath::Abs(CameraView.Z) * SafeExtent.Z;
-
-        CameraDistance = FMath::Max(MinimumCameraDistance, (HalfDepth * PaddingMultiplier) + 100.0f);
+        CameraRotation = Settings.ExplicitCameraRotation;
+        CameraLocation = Settings.ExplicitCameraLocation;
+        OrthoWidth = FMath::Max(Settings.ExplicitOrthoWidth, 2.0f);
     }
     else
     {
-        CameraDistance = FMath::Max(
-            MinimumCameraDistance,
-            CalculatePerspectiveDistance(
-                CenteredBounds,
-                CameraRotation,
-                Settings.PerspectiveFOV,
-                Settings.PerspectiveFOV,
-                PaddingMultiplier));
-    }
+        const FVector CameraForward = CameraRotation.Vector();
+        float CameraDistance = MinimumCameraDistance;
 
-    const FVector CameraLocation = -CameraForward * CameraDistance;
+        if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        {
+            OrthoWidth = CalculateOrthoWidth(CenteredBounds, CameraRotation, PaddingMultiplier);
+
+            const FRotationMatrix CameraMatrix(CameraRotation);
+            const FVector CameraView = CameraMatrix.GetUnitAxis(EAxis::X);
+            const float HalfDepth =
+                FMath::Abs(CameraView.X) * SafeExtent.X +
+                FMath::Abs(CameraView.Y) * SafeExtent.Y +
+                FMath::Abs(CameraView.Z) * SafeExtent.Z;
+
+            CameraDistance = FMath::Max(MinimumCameraDistance, (HalfDepth * PaddingMultiplier) + 100.0f);
+        }
+        else
+        {
+            CameraDistance = FMath::Max(
+                MinimumCameraDistance,
+                CalculatePerspectiveDistance(
+                    CenteredBounds,
+                    CameraRotation,
+                    Settings.PerspectiveFOV,
+                    Settings.PerspectiveFOV,
+                    PaddingMultiplier));
+        }
+
+        CameraLocation = -CameraForward * CameraDistance;
+    }
 
     UTextureRenderTarget2D* ColorTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
     ColorTarget->ClearColor = FLinearColor::Transparent;

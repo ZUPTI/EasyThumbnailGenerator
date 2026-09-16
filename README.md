@@ -3,57 +3,81 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.2.1  
+> **Current version:** 1.3.0  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
 ## Overview
 
-Easy Thumbnail Generator adds a **Create PNG Thumbnail...** action to the Content Browser context menu for Static Mesh and Skeletal Mesh assets.
+Easy Thumbnail Generator adds **Create PNG Thumbnail...** to the Content Browser context menu for Static Mesh and Skeletal Mesh assets.
 
-Instead of immediately exporting an image, the plugin opens a live editor preview where you can frame the asset, choose a camera preset, tune lighting and exposure, and then generate the final PNG.
+The action opens a live editor preview where you can frame the asset, switch camera angles, tune lighting/exposure, save reusable presets, and generate transparent PNG thumbnails without leaving Unreal Editor.
 
-The exported image keeps the mesh materials and uses a **transparent background**.
-
-## Features
-
-- Native C++ editor plugin for Unreal Engine 5.8
-- Content Browser context-menu integration
-- Supports Static Mesh and Skeletal Mesh assets
-- Live 3D preview before export
-- Perspective and orthographic projection modes
-- Camera controls with automatic fit-to-frame
-- Configurable output resolution and frame padding
-- Directional light, skylight and exposure controls
-- Built-in presets:
-  - **Weapon Side**
-  - **Weapon 3/4**
-  - **Asset Default**
-  - **Custom**
-- Material-aware rendering
-- Transparent PNG output
-- Multi-selection support: preview the first selected asset and generate thumbnails for all selected supported assets
-- Output written to:
+Output is written to:
 
 ```text
 <Project>/Saved/Thumbnails/<AssetName>.png
 ```
 
+## Features
+
+- Unreal Engine 5.8 native C++ editor plugin
+- Static Mesh and Skeletal Mesh support
+- Content Browser right-click integration
+- Live 3D preview before export
+- Transparent PNG output
+- Material-aware rendering
+- Perspective and orthographic projection
+- Automatic fit-to-frame
+- Mouse orbit/pan/zoom in the preview viewport
+- Camera shortcuts:
+  - Front
+  - Back
+  - Left
+  - Right
+  - Top
+  - Bottom
+  - 3/4 Left
+  - 3/4 Right
+- Built-in starting presets:
+  - **Weapon Side**
+  - **Weapon 3/4**
+  - **Asset Default**
+  - **Custom**
+- Named user presets with **Save / Load / Rename / Delete**
+- Last-used settings are restored automatically per user/per project
+- Multi-selection navigation with previous/next asset controls
+- **Generate Current** preserves the current live viewport camera framing
+- **Generate All** fits each selected asset independently while reusing the current camera direction and render settings
+- Configurable:
+  - output resolution
+  - frame padding
+  - projection mode
+  - FOV
+  - camera yaw/pitch
+  - directional light
+  - skylight
+  - manual exposure
+
 ## Installation
 
-Clone or copy the repository into your Unreal project Plugins directory:
+Clone or copy this repository into the project's Plugins directory:
 
 ```text
 <Project>/Plugins/EasyThumbnailGenerator/
 ```
 
-The resulting structure should look like:
+Expected structure:
 
 ```text
 <Project>/
 └── Plugins/
     └── EasyThumbnailGenerator/
         ├── EasyThumbnailGenerator.uplugin
+        ├── README.md
+        ├── CHANGELOG.md
+        ├── LICENSE
+        ├── RELEASE_CHECKLIST.md
         └── Source/
 ```
 
@@ -62,70 +86,63 @@ Regenerate project files if needed, then build your Editor target with Unreal En
 ## Usage
 
 1. Open the Content Browser.
-2. Right-click a **Static Mesh** or **Skeletal Mesh** asset.
-3. Choose **Create PNG Thumbnail...**.
-4. Adjust the live preview using a preset or custom camera/light settings.
-5. Use **Fit to Frame** when needed.
-6. Click **Generate PNG**.
-7. Find the result in:
+2. Select one or more **Static Mesh** or **Skeletal Mesh** assets.
+3. Right-click and choose **Create PNG Thumbnail...**.
+4. Adjust the live preview.
+5. Optionally use a built-in preset, camera shortcut, or saved user preset.
+6. Click **Fit to Frame** when you want automatic framing.
+7. Use:
+   - **Generate Current** for the currently previewed asset using the live viewport camera framing.
+   - **Generate All** for batch generation across the current selection.
+8. Find the PNG files in:
 
 ```text
 Saved/Thumbnails/
 ```
 
-## Preview Controls
+## Preview Workflow
 
-The preview window exposes the settings needed for thumbnail creation directly in the workflow, so there is no separate Project Settings page to maintain.
+The preview window intentionally owns the working settings. There is no separate plugin page under Project Settings.
 
-### Output
+### Built-in presets
 
-- Output Resolution
-- Frame Padding
+**Weapon Side** is a side-profile starting point intended for weapon/catalog thumbnails.
 
-### Camera
+**Weapon 3/4** uses a three-quarter view to expose more depth and silhouette.
 
-- Projection Mode
-- Yaw
-- Pitch
-- Perspective FOV
+**Asset Default** is a general-purpose starting point for arbitrary meshes.
 
-### Lighting
+Changing an individual setting switches the session to **Custom**.
 
-- Directional Light Intensity
-- Directional Light Yaw
-- Directional Light Pitch
-- Sky Light Intensity
+### Saved presets
 
-### Post Process
+The **Saved Presets** panel lets you give the current setup a name and save it for later.
 
-- Manual Exposure
-- Exposure Compensation
+Saved presets and the last-used settings are stored as editor per-user/per-project configuration. They are not asset files and do not need to be committed to source control.
 
-Changing a preset value manually switches the session to **Custom**.
+### Camera shortcuts
 
-## Presets
+Camera shortcut buttons immediately change the view and refit the current asset. They are useful for quickly exploring a consistent silhouette before fine-tuning with the mouse.
 
-### Weapon Side
+## Current vs Batch Generation
 
-Designed for clean side-profile weapon thumbnails and catalog-style presentation.
+### Generate Current
 
-### Weapon 3/4
+`Generate Current` transfers the current preview camera location, rotation, FOV/orthographic zoom, lighting and output settings to the PNG renderer. This is intended to keep the generated framing as close as possible to what you composed in the live viewport.
 
-Uses a three-quarter camera angle to expose more of the asset volume and silhouette.
+### Generate All
 
-### Asset Default
-
-A general-purpose starting point for meshes that are not weapon-shaped.
+`Generate All` uses the current camera direction, projection, lighting and output settings, but automatically fits each selected mesh to frame. This avoids applying the first asset's absolute camera distance to differently sized meshes.
 
 ## Transparent Background
 
-The preview scene can use lighting and shading needed to evaluate the asset, while the final PNG is generated with a transparent background. The export path does not rely on simply capturing the editor window.
+The live preview uses an editor preview scene for useful lighting and material evaluation. The final PNG is rendered separately with an alpha-aware capture path, so the exported image keeps a transparent background rather than capturing the editor window itself.
 
 ## Multi-Selection
 
-When multiple supported meshes are selected, the preview window displays the first selection. **Generate PNG** applies the current render settings to every selected supported asset.
+When multiple supported meshes are selected, use the `<` and `>` buttons to inspect them individually.
 
-Each asset is written using its Unreal asset name:
+Example output:
 
 ```text
 Saved/Thumbnails/SM_Example.png
@@ -137,47 +154,65 @@ Saved/Thumbnails/SK_Example.png
 ```text
 EasyThumbnailGenerator/
 ├── EasyThumbnailGenerator.uplugin
+├── README.md
+├── CHANGELOG.md
+├── LICENSE
+├── RELEASE_CHECKLIST.md
 └── Source/
     └── EasyThumbnailGenerator/
         ├── EasyThumbnailGenerator.Build.cs
         ├── Public/
+        │   ├── EasyThumbnailGeneratorModule.h
+        │   ├── EasyThumbnailGeneratorSessionSettings.h
+        │   └── EasyThumbnailGeneratorUserSettings.h
         └── Private/
+            ├── EasyThumbnailGeneratorModule.cpp
+            ├── EasyThumbnailGeneratorRenderer.cpp
+            ├── EasyThumbnailGeneratorSessionSettings.cpp
+            ├── EasyThumbnailGeneratorUserSettings.cpp
+            ├── SEasyThumbnailGeneratorWindow.cpp
+            └── SEasyThumbnailGeneratorWindow.h
 ```
 
-The plugin is intentionally editor-only and does not add runtime dependencies to packaged games.
+The plugin is editor-only and does not add runtime dependencies to packaged games.
 
 ## Compatibility
 
 | Unreal Engine | Status |
 | --- | --- |
-| 5.8 | Target version |
+| 5.8 | Target / maintained |
 | Earlier versions | Not currently maintained |
+
+## Release Notes
+
+See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintainers can use [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md) to keep version metadata, release notes, documentation and validation in sync.
 
 ## Roadmap
 
-Possible future additions include:
+Potential future improvements include:
 
-- Saved user presets
-- Persisting last-used session settings
-- Additional asset-specific camera presets
-- Checkerboard/background preview options
-- Expanded preview environment controls
+- Checkerboard/transparent preview visualization
+- Advanced preview-environment profiles
+- Better preview/output shading parity for complex Static Mesh materials
+- Output folder and filename templates
+- Overwrite policy controls
+- Asset-type-specific controls such as Static Mesh LOD/Nanite and Skeletal Mesh pose options
 
 ## Contributing
 
-Issues and pull requests are welcome. When reporting a rendering or build issue, please include:
+Issues and pull requests are welcome. For rendering or build issues, please include:
 
 - Unreal Engine version
-- Asset type (Static Mesh or Skeletal Mesh)
 - Plugin version
-- Relevant build or editor log
-- A screenshot of the preview/output when the issue is visual
+- Asset type (Static Mesh or Skeletal Mesh)
+- Relevant build/editor log
+- Preview and generated-output screenshots when the issue is visual
 
 ## License
 
-Easy Thumbnail Generator is released under the **MIT License**. See [`LICENSE`](LICENSE) for the full license text.
+Easy Thumbnail Generator is released under the **MIT License**. See [`LICENSE`](LICENSE).
 
-Unreal Engine and its associated trademarks are the property of Epic Games, Inc. This project is an independent plugin and is not affiliated with or endorsed by Epic Games.
+Unreal Engine and its associated trademarks are the property of Epic Games, Inc. This project is independent and is not affiliated with or endorsed by Epic Games.
 
 ## About
 

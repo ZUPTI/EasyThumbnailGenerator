@@ -34,6 +34,13 @@ struct FEasyThumbnailGeneratorRenderSettings
     float SkyLightIntensity = 1.0f;
     bool bUseManualExposure = true;
     float ExposureCompensation = 1.0f;
+
+    // When true, generation uses the exact viewport camera instead of auto fitting.
+    // This is used by Generate Current to keep the PNG framing close to the live preview.
+    bool bUseExplicitCameraTransform = false;
+    FVector ExplicitCameraLocation = FVector::ZeroVector;
+    FRotator ExplicitCameraRotation = FRotator::ZeroRotator;
+    float ExplicitOrthoWidth = 512.0f;
 };
 
 UCLASS(Transient)
@@ -84,5 +91,6 @@ public:
     float ExposureCompensation;
 
     void ApplyPreset(EEasyThumbnailGeneratorPreset InPreset);
+    void ApplyRenderSettings(const FEasyThumbnailGeneratorRenderSettings& Settings, EEasyThumbnailGeneratorPreset InPreset = EEasyThumbnailGeneratorPreset::Custom);
     FEasyThumbnailGeneratorRenderSettings MakeRenderSettings() const;
 };
