@@ -1,0 +1,29 @@
+# Unreal generated output
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# Visual Studio
+.vs/
+*.sln
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+
+# Rider / JetBrains
+.idea/
+
+# Build artifacts
+*.pdb
+*.obj
+*.dll
+*.lib
+*.exp
+*.target
+*.modules
+
+# OS metadata
+.DS_Store
+Thumbs.db
