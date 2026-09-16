@@ -20,6 +20,7 @@ public class EasyThumbnailGenerator : ModuleRules
             "Engine",
             "ImageCore",
             "PropertyEditor",
+            "RenderCore",
             "Slate",
             "SlateCore",
             "ToolMenus",

@@ -71,7 +71,7 @@ FEasyThumbnailGeneratorViewportClient::FEasyThumbnailGeneratorViewportClient(FPr
 {
     SetViewLocation(FVector(-200.0f, 0.0f, 0.0f));
     SetViewRotation(FRotator::ZeroRotator);
-    SetRealtime(true, false);
+    AddRealtimeOverride(true, LOCTEXT("RealtimeOverride", "Easy Thumbnail Generator"));
     bSetListenerPosition = false;
     bUsingOrbitCamera = true;
     EngineShowFlags.SetSelection(false);
