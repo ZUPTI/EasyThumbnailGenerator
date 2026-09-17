@@ -197,6 +197,8 @@ Potential future improvements include:
 - Output folder and filename templates
 - Overwrite policy controls
 - Asset-type-specific controls such as Static Mesh LOD/Nanite and Skeletal Mesh pose options
+- Blueprint / multi-mesh actor support
+- Advanced post-processing support
 
 ## Contributing
 
