@@ -1,4 +1,5 @@
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/MeshComponent.h"
@@ -147,9 +148,10 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
             .SetEditor(true)
             .SetForceMipsResident(true));
 
+    EasyThumbnailGenerator::InitializePreviewSkyLighting(PreviewScene);
     PreviewScene.SetLightBrightness(Settings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(Settings.DirectionalLightPitch, Settings.DirectionalLightYaw, 0.0f));
-    PreviewScene.SetSkyBrightness(Settings.SkyLightIntensity);
+    EasyThumbnailGenerator::ApplyPreviewSkyLightIntensity(PreviewScene, Settings.SkyLightIntensity);
 
     UPrimitiveComponent* MeshComponent = nullptr;
 
