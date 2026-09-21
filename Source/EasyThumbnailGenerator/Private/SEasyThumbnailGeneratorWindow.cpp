@@ -315,20 +315,20 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
         SetViewportType(LVT_Perspective);
         const float HorizontalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
 
-        float AspectRatio = 1.0f;
+        float ViewportAspectRatio = 1.0f;
         if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
         {
             const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
             if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
             {
-                AspectRatio = ViewportSize.X / ViewportSize.Y;
+                ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
             }
         }
 
         // ViewFOV is horizontal. Derive the vertical FOV from the actual live viewport
         // aspect ratio so tall projected bounds do not get clipped in wide preview windows.
         const float VerticalFOVRadians = 2.0f * FMath::Atan(
-            FMath::Tan(HorizontalFOVRadians * 0.5f) / FMath::Max(AspectRatio, 0.01f));
+            FMath::Tan(HorizontalFOVRadians * 0.5f) / FMath::Max(ViewportAspectRatio, 0.01f));
 
         const float DistanceFromWidth = HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
         const float DistanceFromHeight = HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
