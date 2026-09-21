@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
@@ -173,7 +174,7 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
 
     PreviewScene.SetLightBrightness(CurrentSettings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(CurrentSettings.DirectionalLightPitch, CurrentSettings.DirectionalLightYaw, 0.0f));
-    PreviewScene.SetSkyBrightness(CurrentSettings.SkyLightIntensity);
+    EasyThumbnailGenerator::ApplyPreviewSkyLightIntensity(PreviewScene, CurrentSettings.SkyLightIntensity);
 
     ExposureSettings.bFixed = CurrentSettings.bUseManualExposure;
     if (CurrentSettings.bUseManualExposure)
@@ -350,6 +351,8 @@ void SEasyThumbnailGeneratorViewport::Construct(const FArguments& InArgs)
             .SetTransactional(false)
             .SetEditor(true)
             .SetForceMipsResident(true));
+
+    EasyThumbnailGenerator::InitializePreviewSkyLighting(*PreviewScene);
 
     SEditorViewport::Construct(SEditorViewport::FArguments());
 }
