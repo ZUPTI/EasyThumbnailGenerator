@@ -11,7 +11,7 @@ Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG t
   <img src="Docs/Images/easy-thumbnail-generator-preview.png" alt="Easy Thumbnail Generator live preview in Unreal Engine 5.8" width="100%">
 </p>
 
-The weapon shown in the preview is **Krait**, an in-game rifle from [**Kanka**](https://kanka.zupti.com), developed by **ZUPTI**.
+The weapon shown in the preview is **Krait**, an in-game rifle from [**Kanka**](https://kanka.zupti.com), developed by **ZUPTI**. Krait was created by [**Arda Büyüktaş**](https://arda_buyuktas.artstation.com/).
 
 ## Overview
 
@@ -31,7 +31,7 @@ Output is written to:
   <img src="Docs/Images/krait-thumbnail.png" alt="Transparent thumbnail output of the Krait rifle" width="640">
 </p>
 
-The image above is a generated transparent thumbnail of **Krait** using the plugin.
+The image above is a generated transparent thumbnail of **Krait** using the plugin. Krait was created by [**Arda Büyüktaş**](https://arda_buyuktas.artstation.com/).
 
 ## Features
 
