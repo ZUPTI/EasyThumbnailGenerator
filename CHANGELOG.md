@@ -15,6 +15,7 @@ The project follows semantic versioning where practical:
 - Unified manual exposure semantics so the live preview and exported PNG both use a fixed EV100 value instead of interpreting the same control differently.
 - Added an extra preview-scene lighting update before capture to improve skylight parity between the live viewport and exported PNG.
 - Added a material-independent geometry coverage fallback for alpha generation so translucent or additive geometry is less likely to disappear completely from transparent PNG output.
+- Fixed perspective Fit to Frame calculations in wide preview windows by accounting for the live viewport aspect ratio, preventing vertical clipping on tall projected views.
 
 ### Changed
 
