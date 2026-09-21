@@ -196,6 +196,7 @@ Planned areas of work:
 
 ### 1.4.0 — Framing & Preview
 
+- Camera-style icon next to **Create PNG Thumbnail...** in the Content Browser context menu
 - Bounds visualizer in the preview
 - Bounds-center / pivot / custom-offset framing modes
 - Smarter visible-content / silhouette-based fit-to-frame
@@ -218,6 +219,8 @@ Planned areas of work:
 
 - Output folder and filename templates
 - Overwrite policy controls
+- Additional output target: save generated thumbnails as Unreal Engine **Texture assets** while keeping PNG export as the default
+- Optional output mode selection such as **PNG / Texture Asset / Both**
 
 ## Contributing
 
