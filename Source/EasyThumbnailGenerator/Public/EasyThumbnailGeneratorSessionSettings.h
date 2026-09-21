@@ -33,6 +33,7 @@ struct FEasyThumbnailGeneratorRenderSettings
     float DirectionalLightPitch = -45.0f;
     float SkyLightIntensity = 1.0f;
     bool bUseManualExposure = true;
+    // Fixed editor-style EV100 used by both the live preview and final capture.
     float ExposureCompensation = 1.0f;
 
     // When true, generation uses the exact viewport camera instead of auto fitting.
@@ -87,7 +88,7 @@ public:
     UPROPERTY(EditAnywhere, Category="Post Process")
     bool bUseManualExposure;
 
-    UPROPERTY(EditAnywhere, Category="Post Process", meta=(ClampMin="-10.0", ClampMax="10.0", UIMin="-10.0", UIMax="10.0", EditCondition="bUseManualExposure", EditConditionHides))
+    UPROPERTY(EditAnywhere, Category="Post Process", meta=(DisplayName="Fixed EV100", ClampMin="-6.0", ClampMax="12.0", UIMin="-6.0", UIMax="12.0", EditCondition="bUseManualExposure", EditConditionHides, ToolTip="Fixed EV100 used consistently by the live preview and exported PNG."))
     float ExposureCompensation;
 
     void ApplyPreset(EEasyThumbnailGeneratorPreset InPreset);
