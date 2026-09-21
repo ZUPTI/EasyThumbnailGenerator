@@ -283,7 +283,10 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     USceneCaptureComponent2D* CaptureComponent = NewObject<USceneCaptureComponent2D>(GetTransientPackage());
     CaptureComponent->bCaptureEveryFrame = false;
     CaptureComponent->bCaptureOnMovement = false;
-    CaptureComponent->bAlwaysPersistRenderingState = false;
+    // Manual exposure/pre-exposure needs a persistent view state when captures are
+    // triggered on demand. Without it, each Generate Current starts from a fresh
+    // SceneCapture view state and the Fixed EV100 value can be ignored in the LDR pass.
+    CaptureComponent->bAlwaysPersistRenderingState = true;
     CaptureComponent->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
     CaptureComponent->ProjectionType =
         Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic
@@ -352,6 +355,12 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
 
     CaptureComponent->TextureTarget = ColorTarget;
     CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+
+    // Prime the persistent capture view state first. UE's pre-exposure uses view
+    // history, so the first on-demand capture can still carry the default exposure.
+    // The second capture is the one we keep.
+    CaptureComponent->CaptureScene();
+    FlushRenderingCommands();
     CaptureComponent->CaptureScene();
     FlushRenderingCommands();
 
