@@ -8,6 +8,19 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.3.1] - 2026-09-21
+
+### Fixed
+
+- Unified manual exposure semantics so the live preview and exported PNG both use a fixed EV100 value instead of interpreting the same control differently.
+- Added an extra preview-scene lighting update before capture to improve skylight parity between the live viewport and exported PNG.
+- Added a material-independent geometry coverage fallback for alpha generation so translucent or additive geometry is less likely to disappear completely from transparent PNG output.
+
+### Changed
+
+- Renamed the manual exposure control in the UI to **Fixed EV100** to reflect its actual behavior.
+- Expanded the release validation checklist for Nanite, translucent/additive materials, exposure and skylight parity.
+
 ## [1.3.0] - 2026-09-16
 
 ### Added
