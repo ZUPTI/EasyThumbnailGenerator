@@ -1,4 +1,5 @@
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
 #include "Components/MeshComponent.h"
@@ -147,9 +148,10 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
             .SetEditor(true)
             .SetForceMipsResident(true));
 
+    EasyThumbnailGenerator::InitializePreviewSkyLighting(PreviewScene);
     PreviewScene.SetLightBrightness(Settings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(Settings.DirectionalLightPitch, Settings.DirectionalLightYaw, 0.0f));
-    PreviewScene.SetSkyBrightness(Settings.SkyLightIntensity);
+    EasyThumbnailGenerator::ApplyPreviewSkyLightIntensity(PreviewScene, Settings.SkyLightIntensity);
 
     UPrimitiveComponent* MeshComponent = nullptr;
 
@@ -272,10 +274,21 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     MaskTarget->InitCustomFormat(Settings.OutputResolution, Settings.OutputResolution, PF_FloatRGBA, true);
     MaskTarget->UpdateResourceImmediate(true);
 
+    // Separate fallback coverage target. The regular SceneColor alpha path preserves
+    // material opacity where Unreal provides it, while this pass keeps translucent or
+    // additive geometry from disappearing completely from the exported PNG alpha.
+    UTextureRenderTarget2D* CoverageTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
+    CoverageTarget->ClearColor = FLinearColor::Transparent;
+    CoverageTarget->InitCustomFormat(Settings.OutputResolution, Settings.OutputResolution, PF_FloatRGBA, true);
+    CoverageTarget->UpdateResourceImmediate(true);
+
     USceneCaptureComponent2D* CaptureComponent = NewObject<USceneCaptureComponent2D>(GetTransientPackage());
     CaptureComponent->bCaptureEveryFrame = false;
     CaptureComponent->bCaptureOnMovement = false;
-    CaptureComponent->bAlwaysPersistRenderingState = false;
+    // Manual exposure/pre-exposure needs a persistent view state when captures are
+    // triggered on demand. Without it, each Generate Current starts from a fresh
+    // SceneCapture view state and the Fixed EV100 value can be ignored in the LDR pass.
+    CaptureComponent->bAlwaysPersistRenderingState = true;
     CaptureComponent->CompositeMode = ESceneCaptureCompositeMode::SCCM_Overwrite;
     CaptureComponent->ProjectionType =
         Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic
@@ -307,14 +320,28 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     CaptureComponent->ShowFlags.SetTonemapper(true);
     CaptureComponent->ShowFlags.SetDeferredLighting(true);
     CaptureComponent->ShowFlags.SetReflectionEnvironment(true);
+    CaptureComponent->ShowFlags.SetDepthOfField(false);
 
     if (Settings.bUseManualExposure)
     {
         CaptureComponent->PostProcessBlendWeight = 1.0f;
         CaptureComponent->PostProcessSettings.bOverride_AutoExposureMethod = true;
         CaptureComponent->PostProcessSettings.AutoExposureMethod = EAutoExposureMethod::AEM_Manual;
+
+        // Match the editor viewport fixed EV100 override instead of treating the same
+        // setting as exposure compensation. With ISO 100 and f/1, reciprocal shutter
+        // speed 2^EV100 produces the requested EV100 value.
+        const float FixedEV100 = FMath::Clamp(Settings.ExposureCompensation, -6.0f, 12.0f);
+        CaptureComponent->PostProcessSettings.bOverride_AutoExposureApplyPhysicalCameraExposure = true;
+        CaptureComponent->PostProcessSettings.AutoExposureApplyPhysicalCameraExposure = true;
         CaptureComponent->PostProcessSettings.bOverride_AutoExposureBias = true;
-        CaptureComponent->PostProcessSettings.AutoExposureBias = Settings.ExposureCompensation;
+        CaptureComponent->PostProcessSettings.AutoExposureBias = 0.0f;
+        CaptureComponent->PostProcessSettings.bOverride_CameraISO = true;
+        CaptureComponent->PostProcessSettings.CameraISO = 100.0f;
+        CaptureComponent->PostProcessSettings.bOverride_CameraShutterSpeed = true;
+        CaptureComponent->PostProcessSettings.CameraShutterSpeed = FMath::Pow(2.0f, FixedEV100);
+        CaptureComponent->PostProcessSettings.bOverride_DepthOfFieldFstop = true;
+        CaptureComponent->PostProcessSettings.DepthOfFieldFstop = 1.0f;
         CaptureComponent->PostProcessSettings.bOverride_MotionBlurAmount = true;
         CaptureComponent->PostProcessSettings.MotionBlurAmount = 0.0f;
     }
@@ -322,8 +349,20 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     const FTransform CameraTransform(CameraRotation, CameraLocation);
     PreviewScene.AddComponent(CaptureComponent, CameraTransform, false);
 
+    // Give the preview-scene lighting (especially the skylight capture) a final update
+    // after the capture component is present so the exported render sees the same state.
+    PreviewScene.GetWorld()->SendAllEndOfFrameUpdates();
+    PreviewScene.UpdateCaptureContents();
+    FlushRenderingCommands();
+
     CaptureComponent->TextureTarget = ColorTarget;
     CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
+
+    // Prime the persistent capture view state first. UE's pre-exposure uses view
+    // history, so the first on-demand capture can still carry the default exposure.
+    // The second capture is the one we keep.
+    CaptureComponent->CaptureScene();
+    FlushRenderingCommands();
     CaptureComponent->CaptureScene();
     FlushRenderingCommands();
 
@@ -346,14 +385,34 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
         return false;
     }
 
+    // Capture a material-independent geometry mask as a fallback for translucent and
+    // additive materials that may not contribute usable inverse opacity to SceneColor.
+    CaptureComponent->ShowFlags.SetMaterials(false);
+    CaptureComponent->ShowFlags.SetLighting(false);
+    CaptureComponent->ShowFlags.SetPostProcessing(false);
+    CaptureComponent->ShowFlags.SetTonemapper(false);
+    CaptureComponent->TextureTarget = CoverageTarget;
+    CaptureComponent->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
+    CaptureComponent->CaptureScene();
+    FlushRenderingCommands();
+
+    FImage CoverageImage;
+    if (!FImageUtils::GetRenderTargetImage(CoverageTarget, CoverageImage))
+    {
+        OutError = LOCTEXT("CoverageReadFailed", "Failed to read the geometry coverage render target.");
+        return false;
+    }
+
     ColorImage.ChangeFormat(ERawImageFormat::BGRA8, EGammaSpace::sRGB);
     MaskImage.ChangeFormat(ERawImageFormat::RGBA32F, EGammaSpace::Linear);
+    CoverageImage.ChangeFormat(ERawImageFormat::RGBA32F, EGammaSpace::Linear);
 
     const TArrayView64<const FColor> ColorPixels = ColorImage.AsBGRA8();
     const TArrayView64<const FLinearColor> MaskPixels = MaskImage.AsRGBA32F();
+    const TArrayView64<const FLinearColor> CoveragePixels = CoverageImage.AsRGBA32F();
     const int64 ExpectedPixelCount = static_cast<int64>(Settings.OutputResolution) * static_cast<int64>(Settings.OutputResolution);
 
-    if (ColorPixels.Num() != ExpectedPixelCount || MaskPixels.Num() != ExpectedPixelCount)
+    if (ColorPixels.Num() != ExpectedPixelCount || MaskPixels.Num() != ExpectedPixelCount || CoveragePixels.Num() != ExpectedPixelCount)
     {
         OutError = LOCTEXT("UnexpectedImageSize", "The render target returned an unexpected pixel count.");
         return false;
@@ -363,7 +422,9 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
 
     for (int64 PixelIndex = 0; PixelIndex < ExpectedPixelCount; ++PixelIndex)
     {
-        const float Opacity = FMath::Clamp(1.0f - MaskPixels[PixelIndex].A, 0.0f, 1.0f);
+        const float MaterialOpacity = FMath::Clamp(1.0f - MaskPixels[PixelIndex].A, 0.0f, 1.0f);
+        const float CoverageOpacity = FMath::Clamp(1.0f - CoveragePixels[PixelIndex].A, 0.0f, 1.0f);
+        const float Opacity = MaterialOpacity > KINDA_SMALL_NUMBER ? MaterialOpacity : CoverageOpacity;
         FColor Pixel = ColorPixels[PixelIndex];
 
         if (Opacity <= KINDA_SMALL_NUMBER)

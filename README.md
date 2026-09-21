@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.3.0  
+> **Current version:** 1.3.1  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -57,7 +57,7 @@ Output is written to:
   - camera yaw/pitch
   - directional light
   - skylight
-  - manual exposure
+  - fixed EV100 exposure
 
 ## Installation
 
@@ -138,6 +138,8 @@ Camera shortcut buttons immediately change the view and refit the current asset.
 
 The live preview uses an editor preview scene for useful lighting and material evaluation. The final PNG is rendered separately with an alpha-aware capture path, so the exported image keeps a transparent background rather than capturing the editor window itself.
 
+For materials whose normal SceneColor alpha does not provide usable coverage (notably some translucent/additive cases), the renderer also captures a material-independent geometry mask as a fallback so visible geometry is not silently dropped from the exported PNG.
+
 ## Multi-Selection
 
 When multiple supported meshes are selected, use the `<` and `>` buttons to inspect them individually.
@@ -168,6 +170,7 @@ EasyThumbnailGenerator/
         └── Private/
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
+            ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
             ├── SEasyThumbnailGeneratorWindow.cpp
@@ -189,16 +192,35 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 
 ## Roadmap
 
-Potential future improvements include:
+Planned areas of work:
 
+### 1.4.0 — Framing & Preview
+
+- Camera-style icon next to **Create PNG Thumbnail...** in the Content Browser context menu
+- Bounds visualizer in the preview
+- Bounds-center / pivot / custom-offset framing modes
+- Smarter visible-content / silhouette-based fit-to-frame
 - Checkerboard/transparent preview visualization
+- Filename collision handling with auto-incremented suffixes (`Asset.png`, `Asset_1.png`, `Asset_2.png`) instead of silent overwrite
+
+### 1.5.0 — Actor & Pose Support
+
+- Blueprint / multi-mesh Actor thumbnail support
+- Skeletal Mesh pose / Animation Asset selection
+
+### 1.6.0 — Advanced Rendering
+
+- Advanced post-processing controls and custom post-process material support
 - Advanced preview-environment profiles
-- Better preview/output shading parity for complex Static Mesh materials
+- Further preview/output shading parity improvements for complex materials
+- Asset-type-specific Static Mesh LOD / Nanite controls
+
+### 1.7.0 — Output Workflow
+
 - Output folder and filename templates
 - Overwrite policy controls
-- Asset-type-specific controls such as Static Mesh LOD/Nanite and Skeletal Mesh pose options
-- Blueprint / multi-mesh actor support
-- Advanced post-processing support
+- Additional output target: save generated thumbnails as Unreal Engine **Texture assets** while keeping PNG export as the default
+- Optional output mode selection such as **PNG / Texture Asset / Both**
 
 ## Contributing
 

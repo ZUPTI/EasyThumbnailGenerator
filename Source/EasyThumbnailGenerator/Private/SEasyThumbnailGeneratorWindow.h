@@ -34,6 +34,7 @@ private:
     void SyncViewToSettings(bool bRefitCamera);
 
 private:
+    TWeakPtr<SEditorViewport> ViewportWidget;
     FPreviewScene& PreviewScene;
     TObjectPtr<UPrimitiveComponent> PreviewComponent;
     TWeakObjectPtr<UObject> Asset;

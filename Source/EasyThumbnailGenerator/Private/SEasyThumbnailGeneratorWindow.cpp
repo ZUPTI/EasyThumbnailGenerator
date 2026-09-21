@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
@@ -84,6 +85,7 @@ FEasyThumbnailGeneratorViewportClient::FEasyThumbnailGeneratorViewportClient(
     FPreviewScene& InPreviewScene,
     const TSharedRef<SEditorViewport>& InViewportWidget)
     : FEditorViewportClient(nullptr, &InPreviewScene, InViewportWidget)
+    , ViewportWidget(InViewportWidget)
     , PreviewScene(InPreviewScene)
 {
     SetViewLocation(FVector(-200.0f, 0.0f, 0.0f));
@@ -172,7 +174,7 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
 
     PreviewScene.SetLightBrightness(CurrentSettings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(CurrentSettings.DirectionalLightPitch, CurrentSettings.DirectionalLightYaw, 0.0f));
-    PreviewScene.SetSkyBrightness(CurrentSettings.SkyLightIntensity);
+    EasyThumbnailGenerator::ApplyPreviewSkyLightIntensity(PreviewScene, CurrentSettings.SkyLightIntensity);
 
     ExposureSettings.bFixed = CurrentSettings.bUseManualExposure;
     if (CurrentSettings.bUseManualExposure)
@@ -312,9 +314,25 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
     else
     {
         SetViewportType(LVT_Perspective);
-        const float FOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
-        const float DistanceFromWidth = HalfWidth / FMath::Tan(FOVRadians * 0.5f);
-        const float DistanceFromHeight = HalfHeight / FMath::Tan(FOVRadians * 0.5f);
+        const float HorizontalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
+
+        float ViewportAspectRatio = 1.0f;
+        if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
+        {
+            const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
+            if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
+            {
+                ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
+            }
+        }
+
+        // ViewFOV is horizontal. Derive the vertical FOV from the actual live viewport
+        // aspect ratio so tall projected bounds do not get clipped in wide preview windows.
+        const float VerticalFOVRadians = 2.0f * FMath::Atan(
+            FMath::Tan(HorizontalFOVRadians * 0.5f) / FMath::Max(ViewportAspectRatio, 0.01f));
+
+        const float DistanceFromWidth = HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
+        const float DistanceFromHeight = HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
         CameraDistance = FMath::Max(100.0f, (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) * PaddingMultiplier);
     }
 
@@ -333,6 +351,8 @@ void SEasyThumbnailGeneratorViewport::Construct(const FArguments& InArgs)
             .SetTransactional(false)
             .SetEditor(true)
             .SetForceMipsResident(true));
+
+    EasyThumbnailGenerator::InitializePreviewSkyLighting(*PreviewScene);
 
     SEditorViewport::Construct(SEditorViewport::FArguments());
 }

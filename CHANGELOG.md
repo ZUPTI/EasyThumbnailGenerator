@@ -8,6 +8,20 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.3.1] - 2026-09-21
+
+### Fixed
+
+- Unified manual exposure semantics so the live preview and exported PNG both use a fixed EV100 value instead of interpreting the same control differently.
+- Fixed the Sky Light Intensity control by giving both the live preview and exported renderer a real Asset Viewer environment cubemap instead of scaling an empty/black preview-sky capture.
+- Added a material-independent geometry coverage fallback for alpha generation so translucent or additive geometry is less likely to disappear completely from transparent PNG output.
+- Fixed perspective Fit to Frame calculations in wide preview windows by accounting for the live viewport aspect ratio, preventing vertical clipping on tall projected views.
+
+### Changed
+
+- Renamed the manual exposure control in the UI to **Fixed EV100** to reflect its actual behavior.
+- Expanded the release validation checklist for Nanite, translucent/additive materials, exposure and skylight parity.
+
 ## [1.3.0] - 2026-09-16
 
 ### Added
