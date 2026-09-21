@@ -199,6 +199,7 @@ Planned areas of work:
 - Bounds-center / pivot / custom-offset framing modes
 - Smarter visible-content / silhouette-based fit-to-frame
 - Checkerboard/transparent preview visualization
+- Filename collision handling with auto-incremented suffixes (`Asset.png`, `Asset_1.png`, `Asset_2.png`) instead of silent overwrite
 
 ### 1.5.0 — Actor & Pose Support
 
