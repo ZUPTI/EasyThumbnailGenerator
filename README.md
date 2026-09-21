@@ -7,6 +7,12 @@ Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG t
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
+<p align="center">
+  <img src="Docs/Images/easy-thumbnail-generator-preview.webp" alt="Easy Thumbnail Generator live preview in Unreal Engine 5.8" width="100%">
+</p>
+
+The weapon shown in the preview is **Krait**, an in-game rifle from [**Kanka**](https://kanka.zupti.com), developed by **ZUPTI**.
+
 ## Overview
 
 Easy Thumbnail Generator adds **Create PNG Thumbnail...** to the Content Browser context menu for Static Mesh and Skeletal Mesh assets.
@@ -18,6 +24,14 @@ Output is written to:
 ```text
 <Project>/Saved/Thumbnails/<AssetName>.png
 ```
+
+### Example output
+
+<p align="center">
+  <img src="Docs/Images/krait-thumbnail.webp" alt="Transparent thumbnail output of the Krait rifle" width="640">
+</p>
+
+The image above is a generated transparent thumbnail of **Krait** using the plugin.
 
 ## Features
 
@@ -160,6 +174,10 @@ EasyThumbnailGenerator/
 ├── CHANGELOG.md
 ├── LICENSE
 ├── RELEASE_CHECKLIST.md
+├── Docs/
+│   └── Images/
+│       ├── easy-thumbnail-generator-preview.webp
+│       └── krait-thumbnail.webp
 └── Source/
     └── EasyThumbnailGenerator/
         ├── EasyThumbnailGenerator.Build.cs
