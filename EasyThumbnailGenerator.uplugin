@@ -1,7 +1,7 @@
 {
   "FileVersion": 3,
-  "Version": 7,
-  "VersionName": "1.3.0",
+  "Version": 8,
+  "VersionName": "1.3.1",
   "FriendlyName": "Easy Thumbnail Generator",
   "Description": "Live-preview transparent PNG thumbnail generator for Static Mesh and Skeletal Mesh assets, with reusable presets and batch generation.",
   "Category": "ZUPTI",
