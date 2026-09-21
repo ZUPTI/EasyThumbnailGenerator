@@ -170,6 +170,7 @@ EasyThumbnailGenerator/
         └── Private/
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
+            ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
             ├── SEasyThumbnailGeneratorWindow.cpp
