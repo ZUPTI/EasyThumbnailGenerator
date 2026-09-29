@@ -94,7 +94,16 @@ bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
         return false;
     }
 
-    OutFilePath = FPaths::Combine(OutputDirectory, Asset->GetName() + TEXT(".png"));
+    const FString BaseFileName = Asset->GetName();
+    OutFilePath = FPaths::Combine(OutputDirectory, BaseFileName + TEXT(".png"));
+
+    int32 CollisionIndex = 1;
+    while (IFileManager::Get().FileExists(*OutFilePath))
+    {
+        OutFilePath = FPaths::Combine(
+            OutputDirectory,
+            FString::Printf(TEXT("%s_%d.png"), *BaseFileName, CollisionIndex++));
+    }
 
     const FImageView ImageView(
         Pixels.GetData(),
