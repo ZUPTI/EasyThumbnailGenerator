@@ -20,6 +20,15 @@ struct FEasyThumbnailGeneratorSavedPreset
     float FramePaddingPercent = 5.0f;
 
     UPROPERTY()
+    EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::BoundsCenter;
+
+    UPROPERTY()
+    FVector FrameOffset = FVector::ZeroVector;
+
+    UPROPERTY()
+    bool bShowBounds = false;
+
+    UPROPERTY()
     EEasyThumbnailGeneratorProjectionMode ProjectionMode = EEasyThumbnailGeneratorProjectionMode::Perspective;
 
     UPROPERTY()
