@@ -508,10 +508,10 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
             CameraRotation,
             ViewportAspectRatio,
             PaddingMultiplier,
-            100.0f,
+            10.0f,
             GeometryFit))
     {
-        float CameraDistance = 100.0f;
+        float CameraDistance = 10.0f;
 
         if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
         {
@@ -545,7 +545,7 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
     const float HalfDepth =
         EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraForward, FrameRelativeBounds);
 
-    float CameraDistance = 100.0f;
+    float CameraDistance = 10.0f;
 
     if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
     {
@@ -554,7 +554,7 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
             FMath::Max(HalfWidth, HalfHeight * FMath::Max(ViewportAspectRatio, 0.01f));
         SetOrthoZoom(FMath::Max(RequiredHalfWidth * 2.0f * PaddingMultiplier, 2.0f));
         CameraDistance =
-            FMath::Max(100.0f, (HalfDepth * PaddingMultiplier) + 100.0f);
+            FMath::Max(10.0f, (HalfDepth * PaddingMultiplier) + 10.0f);
     }
     else
     {
@@ -572,7 +572,7 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
             HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
 
         CameraDistance = FMath::Max(
-            100.0f,
+            10.0f,
             (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) *
                 PaddingMultiplier);
     }
