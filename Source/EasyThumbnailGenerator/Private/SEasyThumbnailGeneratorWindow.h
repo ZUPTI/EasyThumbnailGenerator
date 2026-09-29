@@ -30,6 +30,8 @@ private:
     bool GetAssetBounds(FBoxSphereBounds& OutBounds) const;
     UPrimitiveComponent* BuildPreviewComponent(UObject* InAsset) const;
     void ClearPreviewComponent();
+    void UpdatePreviewTransform();
+    void RefreshBoundsVisualizer();
     void RefreshScene();
     void SyncViewToSettings(bool bRefitCamera);
 
