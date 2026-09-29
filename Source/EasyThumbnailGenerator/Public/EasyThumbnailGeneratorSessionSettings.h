@@ -33,7 +33,7 @@ struct FEasyThumbnailGeneratorRenderSettings
 {
     int32 OutputResolution = 1024;
     float FramePaddingPercent = 5.0f;
-    EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::BoundsCenter;
+    EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::VisibleContent;
     FVector FrameOffset = FVector::ZeroVector;
     bool bShowBounds = false;
     bool bShowCheckerboard = false;
