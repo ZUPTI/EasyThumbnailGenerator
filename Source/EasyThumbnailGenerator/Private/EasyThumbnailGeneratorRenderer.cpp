@@ -1,5 +1,6 @@
 #include "EasyThumbnailGeneratorRenderer.h"
 #include "EasyThumbnailGeneratorFraming.h"
+#include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
@@ -242,8 +243,33 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     {
         const FVector CameraForward = CameraRotation.Vector();
         float CameraDistance = MinimumCameraDistance;
+        FVector ViewTarget = FVector::ZeroVector;
 
-        if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        EasyThumbnailGenerator::FGeometryFitResult GeometryFit;
+        if (EasyThumbnailGenerator::CalculateGeometryAwareFit(
+                Asset,
+                MeshComponent,
+                AssetBounds,
+                Settings,
+                CameraRotation,
+                1.0f,
+                PaddingMultiplier,
+                MinimumCameraDistance,
+                GeometryFit))
+        {
+            ViewTarget = GeometryFit.ViewTarget;
+
+            if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+            {
+                OrthoWidth = GeometryFit.OrthoWidth;
+                CameraDistance = GeometryFit.OrthoCameraDistance;
+            }
+            else
+            {
+                CameraDistance = GeometryFit.PerspectiveDistance;
+            }
+        }
+        else if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
         {
             OrthoWidth = CalculateOrthoWidth(FrameRelativeBounds, CameraRotation, PaddingMultiplier);
 
@@ -252,7 +278,9 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
             const float HalfDepth =
                 EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraView, FrameRelativeBounds);
 
-            CameraDistance = FMath::Max(MinimumCameraDistance, (HalfDepth * PaddingMultiplier) + 100.0f);
+            CameraDistance = FMath::Max(
+                MinimumCameraDistance,
+                (HalfDepth * PaddingMultiplier) + 100.0f);
         }
         else
         {
@@ -266,7 +294,7 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
                     PaddingMultiplier));
         }
 
-        CameraLocation = -CameraForward * CameraDistance;
+        CameraLocation = ViewTarget - (CameraForward * CameraDistance);
     }
 
     UTextureRenderTarget2D* ColorTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
