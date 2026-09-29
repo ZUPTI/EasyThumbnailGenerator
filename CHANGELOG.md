@@ -8,6 +8,13 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.4.0] - Unreleased
+
+### Added
+
+- Added a camera-style icon to **Create PNG Thumbnail...** in the Content Browser context menu.
+- Added collision-safe PNG filenames: existing thumbnails are preserved and new files use `_1`, `_2`, and later suffixes instead of being silently overwritten.
+
 ## [1.3.1] - 2026-09-21
 
 ### Fixed
