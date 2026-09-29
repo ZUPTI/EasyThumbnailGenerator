@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
 #include "EasyThumbnailGeneratorFraming.h"
+#include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
 #include "DrawDebugHelpers.h"
@@ -482,55 +483,98 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
         return;
     }
 
+    float ViewportAspectRatio = 1.0f;
+    if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
+    {
+        const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
+        if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
+        {
+            ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
+        }
+    }
+
+    const float PaddingMultiplier =
+        1.0f + (FMath::Max(CurrentSettings.FramePaddingPercent, 0.0f) * 0.01f);
+
+    const FRotationMatrix CameraMatrix(CameraRotation);
+    const FVector CameraForward = CameraMatrix.GetUnitAxis(EAxis::X);
+
+    EasyThumbnailGenerator::FGeometryFitResult GeometryFit;
+    if (EasyThumbnailGenerator::CalculateGeometryAwareFit(
+            Asset.Get(),
+            PreviewComponent,
+            Bounds,
+            CurrentSettings,
+            CameraRotation,
+            ViewportAspectRatio,
+            PaddingMultiplier,
+            100.0f,
+            GeometryFit))
+    {
+        float CameraDistance = 100.0f;
+
+        if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        {
+            SetViewportType(LVT_OrthoFreelook);
+            SetOrthoZoom(GeometryFit.OrthoWidth);
+            CameraDistance = GeometryFit.OrthoCameraDistance;
+        }
+        else
+        {
+            SetViewportType(LVT_Perspective);
+            CameraDistance = GeometryFit.PerspectiveDistance;
+        }
+
+        SetViewLocation(GeometryFit.ViewTarget - (CameraForward * CameraDistance));
+        SetLookAtLocation(GeometryFit.ViewTarget);
+        Invalidate();
+        return;
+    }
+
+    // Fallback for assets whose CPU-side vertex data is unavailable.
     const FBoxSphereBounds FrameRelativeBounds =
         EasyThumbnailGenerator::MakeFrameRelativeBounds(Bounds, CurrentSettings, 1.0f);
 
-    const float PaddingMultiplier = 1.0f + (FMath::Max(CurrentSettings.FramePaddingPercent, 0.0f) * 0.01f);
-    const FRotationMatrix CameraMatrix(CameraRotation);
-    const FVector CameraForward = CameraMatrix.GetUnitAxis(EAxis::X);
     const FVector CameraRight = CameraMatrix.GetUnitAxis(EAxis::Y);
     const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
 
     const float HalfWidth =
         EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraRight, FrameRelativeBounds);
-
     const float HalfHeight =
         EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraUp, FrameRelativeBounds);
-
     const float HalfDepth =
         EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraForward, FrameRelativeBounds);
 
     float CameraDistance = 100.0f;
+
     if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
     {
         SetViewportType(LVT_OrthoFreelook);
-        const float OrthoWidth = FMath::Max(FMath::Max(HalfWidth, HalfHeight) * 2.0f * PaddingMultiplier, 2.0f);
-        SetOrthoZoom(OrthoWidth);
-        CameraDistance = FMath::Max(100.0f, HalfDepth * PaddingMultiplier + 100.0f);
+        const float RequiredHalfWidth =
+            FMath::Max(HalfWidth, HalfHeight * FMath::Max(ViewportAspectRatio, 0.01f));
+        SetOrthoZoom(FMath::Max(RequiredHalfWidth * 2.0f * PaddingMultiplier, 2.0f));
+        CameraDistance =
+            FMath::Max(100.0f, (HalfDepth * PaddingMultiplier) + 100.0f);
     }
     else
     {
         SetViewportType(LVT_Perspective);
-        const float HorizontalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
 
-        float ViewportAspectRatio = 1.0f;
-        if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
-        {
-            const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
-            if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
-            {
-                ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
-            }
-        }
-
-        // ViewFOV is horizontal. Derive the vertical FOV from the actual live viewport
-        // aspect ratio so tall projected bounds do not get clipped in wide preview windows.
+        const float HorizontalFOVRadians =
+            FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
         const float VerticalFOVRadians = 2.0f * FMath::Atan(
-            FMath::Tan(HorizontalFOVRadians * 0.5f) / FMath::Max(ViewportAspectRatio, 0.01f));
+            FMath::Tan(HorizontalFOVRadians * 0.5f) /
+            FMath::Max(ViewportAspectRatio, 0.01f));
 
-        const float DistanceFromWidth = HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
-        const float DistanceFromHeight = HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
-        CameraDistance = FMath::Max(100.0f, (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) * PaddingMultiplier);
+        const float DistanceFromWidth =
+            HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
+        const float DistanceFromHeight =
+            HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
+
+        CameraDistance = FMath::Max(
+            100.0f,
+            (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) *
+                PaddingMultiplier);
     }
 
     SetViewLocation(-CameraForward * CameraDistance);
