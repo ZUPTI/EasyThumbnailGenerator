@@ -44,6 +44,7 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Perspective and orthographic projection
 - Automatic fit-to-frame
 - Bounds visualizer in the live preview
+- Optional checkerboard background for visualizing transparent areas
 - Bounds Center / Pivot / Custom Offset framing modes
 - Mouse orbit/pan/zoom in the preview viewport
 - Camera shortcuts:
@@ -70,6 +71,7 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
   - frame padding
   - framing mode and custom framing offset
   - live bounds visualization
+  - checkerboard background preview
   - projection mode
   - FOV
   - camera yaw/pitch
@@ -220,7 +222,6 @@ Planned areas of work:
 ### 1.4.0 — Framing & Preview
 
 - Smarter visible-content / silhouette-based fit-to-frame
-- Checkerboard/transparent preview visualization
 
 ### 1.5.0 — Actor & Pose Support
 
