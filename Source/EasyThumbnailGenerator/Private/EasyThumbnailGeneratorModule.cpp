@@ -5,6 +5,7 @@
 #include "Engine/StaticMesh.h"
 #include "Framework/Application/SlateApplication.h"
 #include "SEasyThumbnailGeneratorWindow.h"
+#include "Styling/AppStyle.h"
 #include "ToolMenu.h"
 #include "ToolMenus.h"
 #include "Widgets/SWindow.h"
@@ -64,7 +65,7 @@ namespace EasyThumbnailGenerator
             TEXT("EasyThumbnailGenerator_CreatePNGThumbnail"),
             LOCTEXT("CreatePNGThumbnail", "Create PNG Thumbnail..."),
             LOCTEXT("CreatePNGThumbnailTooltip", "Open the Easy Thumbnail Generator preview window for the selected mesh assets."),
-            FSlateIcon(),
+            FSlateIcon(FAppStyle::GetAppStyleSetName(), TEXT("ClassIcon.CameraActor")),
             FUIAction(FExecuteAction::CreateLambda([SupportedAssets = MoveTemp(SupportedAssets)]()
             {
                 OpenThumbnailWindow(SupportedAssets);
