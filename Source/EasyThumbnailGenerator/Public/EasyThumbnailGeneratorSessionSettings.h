@@ -14,6 +14,7 @@ enum class EEasyThumbnailGeneratorProjectionMode : uint8
 UENUM()
 enum class EEasyThumbnailGeneratorFramingMode : uint8
 {
+    VisibleContent UMETA(DisplayName = "Visible Content"),
     BoundsCenter UMETA(DisplayName = "Bounds Center"),
     Pivot UMETA(DisplayName = "Pivot"),
     CustomOffset UMETA(DisplayName = "Custom Offset")
@@ -73,7 +74,7 @@ public:
     UPROPERTY(EditAnywhere, Category="Output", meta=(ClampMin="0.0", ClampMax="50.0", UIMin="0.0", UIMax="50.0"))
     float FramePaddingPercent;
 
-    UPROPERTY(EditAnywhere, Category="Framing")
+    UPROPERTY(EditAnywhere, Category="Framing", meta=(ToolTip="Visible Content uses projected mesh geometry to center the framing. Bounds Center, Pivot and Custom Offset keep their explicit framing anchors while still using geometry-aware fit extents."))
     EEasyThumbnailGeneratorFramingMode FramingMode;
 
     UPROPERTY(EditAnywhere, Category="Framing", meta=(EditCondition="FramingMode == EEasyThumbnailGeneratorFramingMode::CustomOffset", EditConditionHides, ToolTip="Offsets the framing center from the asset bounds center in asset-local units."))
