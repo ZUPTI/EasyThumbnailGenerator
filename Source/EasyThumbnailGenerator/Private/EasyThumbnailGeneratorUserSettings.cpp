@@ -7,6 +7,7 @@ void FEasyThumbnailGeneratorSavedPreset::FromRenderSettings(const FEasyThumbnail
     FramingMode = Settings.FramingMode;
     FrameOffset = Settings.FrameOffset;
     bShowBounds = Settings.bShowBounds;
+    bShowCheckerboard = Settings.bShowCheckerboard;
     ProjectionMode = Settings.ProjectionMode;
     CameraYaw = Settings.CameraYaw;
     CameraPitch = Settings.CameraPitch;
@@ -27,6 +28,7 @@ FEasyThumbnailGeneratorRenderSettings FEasyThumbnailGeneratorSavedPreset::ToRend
     Settings.FramingMode = FramingMode;
     Settings.FrameOffset = FrameOffset;
     Settings.bShowBounds = bShowBounds;
+    Settings.bShowCheckerboard = bShowCheckerboard;
     Settings.ProjectionMode = ProjectionMode;
     Settings.CameraYaw = CameraYaw;
     Settings.CameraPitch = CameraPitch;
