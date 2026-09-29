@@ -12,6 +12,14 @@ enum class EEasyThumbnailGeneratorProjectionMode : uint8
 };
 
 UENUM()
+enum class EEasyThumbnailGeneratorFramingMode : uint8
+{
+    BoundsCenter UMETA(DisplayName = "Bounds Center"),
+    Pivot UMETA(DisplayName = "Pivot"),
+    CustomOffset UMETA(DisplayName = "Custom Offset")
+};
+
+UENUM()
 enum class EEasyThumbnailGeneratorPreset : uint8
 {
     WeaponSide UMETA(DisplayName = "Weapon Side"),
@@ -24,6 +32,9 @@ struct FEasyThumbnailGeneratorRenderSettings
 {
     int32 OutputResolution = 1024;
     float FramePaddingPercent = 5.0f;
+    EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::BoundsCenter;
+    FVector FrameOffset = FVector::ZeroVector;
+    bool bShowBounds = false;
     EEasyThumbnailGeneratorProjectionMode ProjectionMode = EEasyThumbnailGeneratorProjectionMode::Perspective;
     float CameraYaw = -90.0f;
     float CameraPitch = 0.0f;
@@ -60,6 +71,15 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Output", meta=(ClampMin="0.0", ClampMax="50.0", UIMin="0.0", UIMax="50.0"))
     float FramePaddingPercent;
+
+    UPROPERTY(EditAnywhere, Category="Framing")
+    EEasyThumbnailGeneratorFramingMode FramingMode;
+
+    UPROPERTY(EditAnywhere, Category="Framing", meta=(EditCondition="FramingMode == EEasyThumbnailGeneratorFramingMode::CustomOffset", EditConditionHides, ToolTip="Offsets the framing center from the asset bounds center in asset-local units."))
+    FVector FrameOffset;
+
+    UPROPERTY(EditAnywhere, Category="Framing", meta=(DisplayName="Show Bounds", ToolTip="Draw the asset bounds in the live preview. This does not affect the exported PNG."))
+    bool bShowBounds;
 
     UPROPERTY(EditAnywhere, Category="Camera")
     EEasyThumbnailGeneratorProjectionMode ProjectionMode;
