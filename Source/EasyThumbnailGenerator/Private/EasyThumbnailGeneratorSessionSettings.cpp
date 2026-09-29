@@ -14,7 +14,7 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyPreset(EEasyThumbnailGenerator
 
     if (InPreset != EEasyThumbnailGeneratorPreset::Custom)
     {
-        FramingMode = EEasyThumbnailGeneratorFramingMode::BoundsCenter;
+        FramingMode = EEasyThumbnailGeneratorFramingMode::VisibleContent;
         FrameOffset = FVector::ZeroVector;
         bShowBounds = false;
     }
