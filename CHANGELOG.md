@@ -8,7 +8,7 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
-## [1.4.0] - Unreleased
+## [1.4.0] - 2026-09-29
 
 ### Added
 
@@ -19,6 +19,10 @@ The project follows semantic versioning where practical:
 - Added geometry-aware Fit to Frame using projected Static Mesh / Skeletal Mesh vertex positions for tighter screen-space framing, with bounds-based fallback when CPU geometry data is unavailable.
 - Built-in presets now default to **Visible Content** framing so visually asymmetric assets can be centered by projected geometry rather than only by their bounds box.
 - Added an optional checkerboard background to the live preview, rendered as a depth-tested editor view element behind the asset so it does not affect lighting, reflections, shadows, or PNG output.
+
+### Fixed
+
+- Fixed Fit to Frame on physically small assets by removing the previous 100-unit camera-distance floor while preserving near-plane clearance.
 
 ## [1.3.1] - 2026-09-21
 
