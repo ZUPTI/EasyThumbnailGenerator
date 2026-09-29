@@ -29,6 +29,9 @@ struct FEasyThumbnailGeneratorSavedPreset
     bool bShowBounds = false;
 
     UPROPERTY()
+    bool bShowCheckerboard = false;
+
+    UPROPERTY()
     EEasyThumbnailGeneratorProjectionMode ProjectionMode = EEasyThumbnailGeneratorProjectionMode::Perspective;
 
     UPROPERTY()
