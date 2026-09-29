@@ -17,6 +17,7 @@ namespace EasyThumbnailGenerator
         case EEasyThumbnailGeneratorFramingMode::CustomOffset:
             return AssetBounds.Origin + Settings.FrameOffset;
 
+        case EEasyThumbnailGeneratorFramingMode::VisibleContent:
         case EEasyThumbnailGeneratorFramingMode::BoundsCenter:
         default:
             return AssetBounds.Origin;
