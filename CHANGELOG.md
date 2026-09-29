@@ -14,6 +14,8 @@ The project follows semantic versioning where practical:
 
 - Added a camera-style icon to **Create PNG Thumbnail...** in the Content Browser context menu.
 - Added collision-safe PNG filenames: existing thumbnails are preserved and new files use `_1`, `_2`, and later suffixes instead of being silently overwritten.
+- Added a live bounds visualizer for inspecting the asset bounds used by framing.
+- Added **Bounds Center**, **Pivot**, and **Custom Offset** framing modes, shared by the live preview and PNG renderer.
 
 ## [1.3.1] - 2026-09-21
 
