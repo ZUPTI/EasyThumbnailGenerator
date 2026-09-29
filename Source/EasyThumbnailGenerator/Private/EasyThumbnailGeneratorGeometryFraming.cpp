@@ -219,10 +219,14 @@ namespace EasyThumbnailGenerator
                 (AbsRight * SafePadding / TanHalfHorizontal) - Depth;
             const float RequiredFromHeight =
                 (AbsUp * SafePadding / TanHalfVertical) - Depth;
+            const float RequiredFromNearPlane =
+                MinimumCameraDistance - Depth;
 
             RequiredPerspectiveDistance = FMath::Max(
                 RequiredPerspectiveDistance,
-                FMath::Max(RequiredFromWidth, RequiredFromHeight));
+                FMath::Max(
+                    RequiredFromNearPlane,
+                    FMath::Max(RequiredFromWidth, RequiredFromHeight)));
         }
 
         const float RequiredOrthoHalfWidth = FMath::Max(
