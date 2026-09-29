@@ -24,7 +24,7 @@ namespace EasyThumbnailGenerator
             }
 
             const FStaticMeshRenderData* RenderData = StaticMesh->GetRenderData();
-            if (!RenderData || RenderData->LODResources.IsEmpty())
+            if (!RenderData || RenderData->LODResources.Num() == 0)
             {
                 return false;
             }
@@ -61,7 +61,7 @@ namespace EasyThumbnailGenerator
             }
 
             FSkeletalMeshRenderData* RenderData = SkeletalMesh->GetResourceForRendering();
-            if (!RenderData || RenderData->LODRenderData.IsEmpty())
+            if (!RenderData || RenderData->LODRenderData.Num() == 0)
             {
                 return false;
             }
@@ -153,9 +153,9 @@ namespace EasyThumbnailGenerator
         const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
 
         float MinRight = TNumericLimits<float>::Max();
-        float MaxRight = TNumericLimits<float>::Lowest();
+        float MaxRight = -TNumericLimits<float>::Max();
         float MinUp = TNumericLimits<float>::Max();
-        float MaxUp = TNumericLimits<float>::Lowest();
+        float MaxUp = -TNumericLimits<float>::Max();
 
         for (const FVector& Position : Positions)
         {
