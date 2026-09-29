@@ -20,6 +20,7 @@ public:
     FEasyThumbnailGeneratorViewportClient(FPreviewScene& InPreviewScene, const TSharedRef<SEditorViewport>& InViewportWidget);
 
     void Tick(float DeltaSeconds) override;
+    void Draw(const FSceneView* View, FPrimitiveDrawInterface* PDI) override;
 
     void SetAsset(UObject* InAsset);
     void ApplySettings(const FEasyThumbnailGeneratorRenderSettings& InSettings, bool bRefitCamera);
