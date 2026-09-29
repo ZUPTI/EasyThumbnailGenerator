@@ -4,12 +4,18 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorFraming.h"
+#include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
+#include "DrawDebugHelpers.h"
+#include "DynamicMeshBuilder.h"
+#include "Engine/Engine.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "IDetailsView.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -121,6 +127,146 @@ void FEasyThumbnailGeneratorViewportClient::Tick(float DeltaSeconds)
     }
 }
 
+void FEasyThumbnailGeneratorViewportClient::Draw(
+    const FSceneView* View,
+    FPrimitiveDrawInterface* PDI)
+{
+    FEditorViewportClient::Draw(View, PDI);
+
+    if (!CurrentSettings.bShowCheckerboard || !View || !PDI || !GEngine)
+    {
+        return;
+    }
+
+    UMaterial* CheckerMaterial = GEngine->VertexColorViewModeMaterial_ColorOnly;
+    if (!CheckerMaterial)
+    {
+        CheckerMaterial = GEngine->VertexColorMaterial;
+    }
+
+    if (!CheckerMaterial)
+    {
+        return;
+    }
+
+    FBoxSphereBounds AssetBounds;
+    if (!GetAssetBounds(AssetBounds))
+    {
+        return;
+    }
+
+    const FVector ViewDirection = View->GetViewDirection().GetSafeNormal();
+    const FVector ViewRight = View->GetViewRight().GetSafeNormal();
+    const FVector ViewUp = View->GetViewUp().GetSafeNormal();
+
+    if (ViewDirection.IsNearlyZero() || ViewRight.IsNearlyZero() || ViewUp.IsNearlyZero())
+    {
+        return;
+    }
+
+    const FBoxSphereBounds FrameRelativeBounds =
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(AssetBounds, CurrentSettings, 1.0f);
+
+    const float HalfAssetDepth =
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(ViewDirection, FrameRelativeBounds);
+
+    const FVector ViewLocation = GetViewLocation();
+    const float DistanceToFrameCenter = FMath::Max(
+        FVector::DotProduct(-ViewLocation, ViewDirection),
+        10.0f);
+
+    // Place the checkerboard safely behind the entire framed asset. It is submitted as
+    // an editor view element rather than scene geometry, so it cannot affect lighting,
+    // reflections, shadows, or generated PNG output.
+    const float BackgroundDistance =
+        DistanceToFrameCenter + HalfAssetDepth + FMath::Max(50.0f, HalfAssetDepth * 0.25f);
+
+    const FIntRect ViewRect = View->UnscaledViewRect;
+    const float ViewportWidth = FMath::Max(1, ViewRect.Width());
+    const float ViewportHeight = FMath::Max(1, ViewRect.Height());
+    const float ViewportAspectRatio = ViewportWidth / ViewportHeight;
+
+    float HalfBackgroundWidth = 500.0f;
+    float HalfBackgroundHeight = 500.0f;
+
+    if (View->IsPerspectiveProjection())
+    {
+        const float HorizontalFOVRadians =
+            FMath::DegreesToRadians(FMath::Clamp(ViewFOV, 1.0f, 170.0f));
+
+        HalfBackgroundWidth =
+            BackgroundDistance * FMath::Tan(HorizontalFOVRadians * 0.5f) * 1.05f;
+        HalfBackgroundHeight =
+            (HalfBackgroundWidth / FMath::Max(ViewportAspectRatio, 0.01f)) * 1.05f;
+    }
+    else
+    {
+        HalfBackgroundWidth = FMath::Max(GetOrthoZoom() * 0.55f, 10.0f);
+        HalfBackgroundHeight =
+            HalfBackgroundWidth / FMath::Max(ViewportAspectRatio, 0.01f);
+    }
+
+    const FVector PlaneCenter = ViewLocation + ViewDirection * BackgroundDistance;
+    const FVector BottomLeft =
+        PlaneCenter - ViewRight * HalfBackgroundWidth - ViewUp * HalfBackgroundHeight;
+
+    constexpr int32 CheckerColumns = 32;
+    const float FullWidth = HalfBackgroundWidth * 2.0f;
+    const float FullHeight = HalfBackgroundHeight * 2.0f;
+    const float CellSize = FullWidth / static_cast<float>(CheckerColumns);
+    const int32 CheckerRows = FMath::Max(1, FMath::CeilToInt(FullHeight / CellSize));
+
+    FDynamicMeshBuilder MeshBuilder(View->GetFeatureLevel());
+    MeshBuilder.ReserveVertices(CheckerColumns * CheckerRows * 4);
+    MeshBuilder.ReserveTriangles(CheckerColumns * CheckerRows * 2);
+
+    const FVector3f TangentX(ViewRight);
+    const FVector3f TangentY(ViewUp);
+    const FVector3f TangentZ(-ViewDirection);
+
+    const FColor DarkChecker(72, 72, 72);
+    const FColor LightChecker(120, 120, 120);
+
+    for (int32 Y = 0; Y < CheckerRows; ++Y)
+    {
+        for (int32 X = 0; X < CheckerColumns; ++X)
+        {
+            const float X0 = X * CellSize;
+            const float X1 = FMath::Min((X + 1) * CellSize, FullWidth);
+            const float Y0 = Y * CellSize;
+            const float Y1 = FMath::Min((Y + 1) * CellSize, FullHeight);
+
+            const FColor CellColor = ((X + Y) & 1) == 0 ? DarkChecker : LightChecker;
+
+            const FVector P0 = BottomLeft + ViewRight * X0 + ViewUp * Y0;
+            const FVector P1 = BottomLeft + ViewRight * X1 + ViewUp * Y0;
+            const FVector P2 = BottomLeft + ViewRight * X1 + ViewUp * Y1;
+            const FVector P3 = BottomLeft + ViewRight * X0 + ViewUp * Y1;
+
+            const int32 V0 = MeshBuilder.AddVertex(
+                FVector3f(P0), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V1 = MeshBuilder.AddVertex(
+                FVector3f(P1), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V2 = MeshBuilder.AddVertex(
+                FVector3f(P2), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V3 = MeshBuilder.AddVertex(
+                FVector3f(P3), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+
+            MeshBuilder.AddTriangle(V0, V1, V2);
+            MeshBuilder.AddTriangle(V0, V2, V3);
+        }
+    }
+
+    MeshBuilder.Draw(
+        PDI,
+        FMatrix::Identity,
+        CheckerMaterial->GetRenderProxy(),
+        SDPG_World,
+        true,
+        false,
+        FHitProxyId());
+}
+
 void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
 {
     ClearPreviewComponent();
@@ -137,7 +283,8 @@ void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
         FBoxSphereBounds Bounds;
         if (GetAssetBounds(Bounds))
         {
-            PreviewScene.AddComponent(PreviewComponent, FTransform(FQuat::Identity, -Bounds.Origin), false);
+            const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+            PreviewScene.AddComponent(PreviewComponent, FTransform(FQuat::Identity, -FrameCenter), false);
         }
         else
         {
@@ -171,6 +318,8 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
 {
     CurrentSettings = InSettings;
     CurrentSettings.bUseExplicitCameraTransform = false;
+
+    UpdatePreviewTransform();
 
     PreviewScene.SetLightBrightness(CurrentSettings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(CurrentSettings.DirectionalLightPitch, CurrentSettings.DirectionalLightYaw, 0.0f));
@@ -246,8 +395,65 @@ void FEasyThumbnailGeneratorViewportClient::ClearPreviewComponent()
     }
 }
 
+void FEasyThumbnailGeneratorViewportClient::UpdatePreviewTransform()
+{
+    if (!PreviewComponent)
+    {
+        return;
+    }
+
+    FBoxSphereBounds Bounds;
+    if (!GetAssetBounds(Bounds))
+    {
+        return;
+    }
+
+    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+    PreviewComponent->SetWorldTransform(FTransform(FQuat::Identity, -FrameCenter));
+    PreviewComponent->UpdateComponentToWorld();
+    PreviewComponent->MarkRenderTransformDirty();
+    PreviewComponent->UpdateBounds();
+}
+
+void FEasyThumbnailGeneratorViewportClient::RefreshBoundsVisualizer()
+{
+    UWorld* World = PreviewScene.GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    FlushPersistentDebugLines(World);
+
+    if (!CurrentSettings.bShowBounds)
+    {
+        return;
+    }
+
+    FBoxSphereBounds Bounds;
+    if (!GetAssetBounds(Bounds))
+    {
+        return;
+    }
+
+    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+    const FVector RelativeBoundsCenter = Bounds.Origin - FrameCenter;
+
+    DrawDebugBox(
+        World,
+        RelativeBoundsCenter,
+        Bounds.BoxExtent,
+        FColor::Green,
+        true,
+        -1.0f,
+        0,
+        1.0f);
+}
+
 void FEasyThumbnailGeneratorViewportClient::RefreshScene()
 {
+    RefreshBoundsVisualizer();
+
     if (PreviewScene.GetWorld())
     {
         PreviewScene.GetWorld()->SendAllEndOfFrameUpdates();
@@ -277,63 +483,98 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
         return;
     }
 
-    const FVector SafeExtent(
-        FMath::Max(Bounds.BoxExtent.X, 1.0f),
-        FMath::Max(Bounds.BoxExtent.Y, 1.0f),
-        FMath::Max(Bounds.BoxExtent.Z, 1.0f));
+    float ViewportAspectRatio = 1.0f;
+    if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
+    {
+        const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
+        if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
+        {
+            ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
+        }
+    }
 
-    const float PaddingMultiplier = 1.0f + (FMath::Max(CurrentSettings.FramePaddingPercent, 0.0f) * 0.01f);
+    const float PaddingMultiplier =
+        1.0f + (FMath::Max(CurrentSettings.FramePaddingPercent, 0.0f) * 0.01f);
+
     const FRotationMatrix CameraMatrix(CameraRotation);
     const FVector CameraForward = CameraMatrix.GetUnitAxis(EAxis::X);
+
+    EasyThumbnailGenerator::FGeometryFitResult GeometryFit;
+    if (EasyThumbnailGenerator::CalculateGeometryAwareFit(
+            Asset.Get(),
+            PreviewComponent,
+            Bounds,
+            CurrentSettings,
+            CameraRotation,
+            ViewportAspectRatio,
+            PaddingMultiplier,
+            10.0f,
+            GeometryFit))
+    {
+        float CameraDistance = 10.0f;
+
+        if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        {
+            SetViewportType(LVT_OrthoFreelook);
+            SetOrthoZoom(GeometryFit.OrthoWidth);
+            CameraDistance = GeometryFit.OrthoCameraDistance;
+        }
+        else
+        {
+            SetViewportType(LVT_Perspective);
+            CameraDistance = GeometryFit.PerspectiveDistance;
+        }
+
+        SetViewLocation(GeometryFit.ViewTarget - (CameraForward * CameraDistance));
+        SetLookAtLocation(GeometryFit.ViewTarget);
+        Invalidate();
+        return;
+    }
+
+    // Fallback for assets whose CPU-side vertex data is unavailable.
+    const FBoxSphereBounds FrameRelativeBounds =
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(Bounds, CurrentSettings, 1.0f);
+
     const FVector CameraRight = CameraMatrix.GetUnitAxis(EAxis::Y);
     const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
 
     const float HalfWidth =
-        FMath::Abs(CameraRight.X) * SafeExtent.X +
-        FMath::Abs(CameraRight.Y) * SafeExtent.Y +
-        FMath::Abs(CameraRight.Z) * SafeExtent.Z;
-
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraRight, FrameRelativeBounds);
     const float HalfHeight =
-        FMath::Abs(CameraUp.X) * SafeExtent.X +
-        FMath::Abs(CameraUp.Y) * SafeExtent.Y +
-        FMath::Abs(CameraUp.Z) * SafeExtent.Z;
-
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraUp, FrameRelativeBounds);
     const float HalfDepth =
-        FMath::Abs(CameraForward.X) * SafeExtent.X +
-        FMath::Abs(CameraForward.Y) * SafeExtent.Y +
-        FMath::Abs(CameraForward.Z) * SafeExtent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraForward, FrameRelativeBounds);
 
-    float CameraDistance = 100.0f;
+    float CameraDistance = 10.0f;
+
     if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
     {
         SetViewportType(LVT_OrthoFreelook);
-        const float OrthoWidth = FMath::Max(FMath::Max(HalfWidth, HalfHeight) * 2.0f * PaddingMultiplier, 2.0f);
-        SetOrthoZoom(OrthoWidth);
-        CameraDistance = FMath::Max(100.0f, HalfDepth * PaddingMultiplier + 100.0f);
+        const float RequiredHalfWidth =
+            FMath::Max(HalfWidth, HalfHeight * FMath::Max(ViewportAspectRatio, 0.01f));
+        SetOrthoZoom(FMath::Max(RequiredHalfWidth * 2.0f * PaddingMultiplier, 2.0f));
+        CameraDistance =
+            FMath::Max(10.0f, (HalfDepth * PaddingMultiplier) + 10.0f);
     }
     else
     {
         SetViewportType(LVT_Perspective);
-        const float HorizontalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
 
-        float ViewportAspectRatio = 1.0f;
-        if (const TSharedPtr<SEditorViewport> PinnedViewport = ViewportWidget.Pin())
-        {
-            const FVector2D ViewportSize = PinnedViewport->GetCachedGeometry().GetLocalSize();
-            if (ViewportSize.X > 1.0f && ViewportSize.Y > 1.0f)
-            {
-                ViewportAspectRatio = ViewportSize.X / ViewportSize.Y;
-            }
-        }
-
-        // ViewFOV is horizontal. Derive the vertical FOV from the actual live viewport
-        // aspect ratio so tall projected bounds do not get clipped in wide preview windows.
+        const float HorizontalFOVRadians =
+            FMath::DegreesToRadians(FMath::Max(1.0f, CurrentSettings.PerspectiveFOV));
         const float VerticalFOVRadians = 2.0f * FMath::Atan(
-            FMath::Tan(HorizontalFOVRadians * 0.5f) / FMath::Max(ViewportAspectRatio, 0.01f));
+            FMath::Tan(HorizontalFOVRadians * 0.5f) /
+            FMath::Max(ViewportAspectRatio, 0.01f));
 
-        const float DistanceFromWidth = HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
-        const float DistanceFromHeight = HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
-        CameraDistance = FMath::Max(100.0f, (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) * PaddingMultiplier);
+        const float DistanceFromWidth =
+            HalfWidth / FMath::Tan(HorizontalFOVRadians * 0.5f);
+        const float DistanceFromHeight =
+            HalfHeight / FMath::Tan(VerticalFOVRadians * 0.5f);
+
+        CameraDistance = FMath::Max(
+            10.0f,
+            (FMath::Max(DistanceFromWidth, DistanceFromHeight) + HalfDepth) *
+                PaddingMultiplier);
     }
 
     SetViewLocation(-CameraForward * CameraDistance);
@@ -712,6 +953,8 @@ void SEasyThumbnailGeneratorWindow::HandleSettingsChanged(const FPropertyChanged
 
     const bool bCameraRelatedChange =
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, Preset) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FramingMode) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FrameOffset) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, ProjectionMode) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraYaw) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraPitch) ||

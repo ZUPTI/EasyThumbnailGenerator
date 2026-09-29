@@ -14,6 +14,8 @@ Use this checklist for every Easy Thumbnail Generator release.
 - [ ] Test opaque, masked, translucent and additive material output.
 - [ ] Test at least one Nanite-enabled Static Mesh and one non-Nanite Static Mesh.
 - [ ] Verify **Fit to Frame** keeps the full asset visible in Front/Back/Left/Right/Top/Bottom and 3/4 views, especially in a wide preview window.
+- [ ] Verify **Visible Content** produces a tighter, visually centered fit on an asymmetric/curved mesh, and compare it with Bounds Center / Pivot / Custom Offset.
+- [ ] Verify geometry-aware framing works on both Static Mesh and Skeletal Mesh assets and falls back safely when CPU geometry data is unavailable.
 - [ ] Test multi-selection / `Generate All` when batch behavior changed.
 - [ ] Test saved presets and last-used settings when configuration behavior changed.
 - [ ] Verify output under `Saved/Thumbnails`.

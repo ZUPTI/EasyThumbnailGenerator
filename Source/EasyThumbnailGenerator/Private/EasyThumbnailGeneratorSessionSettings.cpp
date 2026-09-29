@@ -12,6 +12,13 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyPreset(EEasyThumbnailGenerator
 {
     Preset = InPreset;
 
+    if (InPreset != EEasyThumbnailGeneratorPreset::Custom)
+    {
+        FramingMode = EEasyThumbnailGeneratorFramingMode::VisibleContent;
+        FrameOffset = FVector::ZeroVector;
+        bShowBounds = false;
+    }
+
     switch (InPreset)
     {
     case EEasyThumbnailGeneratorPreset::WeaponSide:
@@ -67,6 +74,10 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyRenderSettings(
     Preset = InPreset;
     OutputResolution = Settings.OutputResolution;
     FramePaddingPercent = Settings.FramePaddingPercent;
+    FramingMode = Settings.FramingMode;
+    FrameOffset = Settings.FrameOffset;
+    bShowBounds = Settings.bShowBounds;
+    bShowCheckerboard = Settings.bShowCheckerboard;
     ProjectionMode = Settings.ProjectionMode;
     CameraYaw = Settings.CameraYaw;
     CameraPitch = Settings.CameraPitch;
@@ -84,6 +95,10 @@ FEasyThumbnailGeneratorRenderSettings UEasyThumbnailGeneratorSessionSettings::Ma
     FEasyThumbnailGeneratorRenderSettings Settings;
     Settings.OutputResolution = OutputResolution;
     Settings.FramePaddingPercent = FramePaddingPercent;
+    Settings.FramingMode = FramingMode;
+    Settings.FrameOffset = FrameOffset;
+    Settings.bShowBounds = bShowBounds;
+    Settings.bShowCheckerboard = bShowCheckerboard;
     Settings.ProjectionMode = ProjectionMode;
     Settings.CameraYaw = CameraYaw;
     Settings.CameraPitch = CameraPitch;

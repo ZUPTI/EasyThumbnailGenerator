@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.3.1  
+> **Current version:** 1.4.0  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -37,12 +37,15 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 
 - Unreal Engine 5.8 native C++ editor plugin
 - Static Mesh and Skeletal Mesh support
-- Content Browser right-click integration
+- Content Browser right-click integration with a camera-style action icon
 - Live 3D preview before export
-- Transparent PNG output
+- Transparent PNG output with collision-safe auto-incremented filenames
 - Material-aware rendering
 - Perspective and orthographic projection
-- Automatic fit-to-frame
+- Geometry-aware fit-to-frame based on projected mesh vertices
+- Bounds visualizer in the live preview
+- Optional checkerboard background for visualizing transparent areas
+- Visible Content / Bounds Center / Pivot / Custom Offset framing modes
 - Mouse orbit/pan/zoom in the preview viewport
 - Camera shortcuts:
   - Front
@@ -66,6 +69,9 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Configurable:
   - output resolution
   - frame padding
+  - framing mode and custom framing offset
+  - live bounds visualization
+  - checkerboard background preview
   - projection mode
   - FOV
   - camera yaw/pitch
@@ -126,6 +132,8 @@ The preview window intentionally owns the working settings. There is no separate
 
 **Asset Default** is a general-purpose starting point for arbitrary meshes.
 
+Built-in presets use **Visible Content** framing by default. This mode measures the projected mesh geometry from the current camera direction and recenters the frame around the visible silhouette instead of relying only on the asset bounds box. **Bounds Center**, **Pivot**, and **Custom Offset** remain available when you want an explicit framing anchor.
+
 Changing an individual setting switches the session to **Custom**.
 
 ### Saved presets
@@ -137,6 +145,8 @@ Saved presets and the last-used settings are stored as editor per-user/per-proje
 ### Camera shortcuts
 
 Camera shortcut buttons immediately change the view and refit the current asset. They are useful for quickly exploring a consistent silhouette before fine-tuning with the mouse.
+
+`Fit to Frame` uses projected mesh vertex positions when CPU-side geometry data is available, which produces a tighter screen-space fit than projecting the full 3D bounds box. If that geometry data is unavailable, the plugin falls back to the bounds-based fit.
 
 ## Current vs Batch Generation
 
@@ -188,6 +198,9 @@ EasyThumbnailGenerator/
         └── Private/
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
+            ├── EasyThumbnailGeneratorFraming.h
+            ├── EasyThumbnailGeneratorGeometryFraming.cpp
+            ├── EasyThumbnailGeneratorGeometryFraming.h
             ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
@@ -211,15 +224,6 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 ## Roadmap
 
 Planned areas of work:
-
-### 1.4.0 — Framing & Preview
-
-- Camera-style icon next to **Create PNG Thumbnail...** in the Content Browser context menu
-- Bounds visualizer in the preview
-- Bounds-center / pivot / custom-offset framing modes
-- Smarter visible-content / silhouette-based fit-to-frame
-- Checkerboard/transparent preview visualization
-- Filename collision handling with auto-incremented suffixes (`Asset.png`, `Asset_1.png`, `Asset_2.png`) instead of silent overwrite
 
 ### 1.5.0 — Actor & Pose Support
 

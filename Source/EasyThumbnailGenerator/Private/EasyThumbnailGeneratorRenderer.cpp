@@ -1,4 +1,6 @@
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorFraming.h"
+#include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
@@ -94,7 +96,16 @@ bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
         return false;
     }
 
-    OutFilePath = FPaths::Combine(OutputDirectory, Asset->GetName() + TEXT(".png"));
+    const FString BaseFileName = Asset->GetName();
+    OutFilePath = FPaths::Combine(OutputDirectory, BaseFileName + TEXT(".png"));
+
+    int32 CollisionIndex = 1;
+    while (IFileManager::Get().FileExists(*OutFilePath))
+    {
+        OutFilePath = FPaths::Combine(
+            OutputDirectory,
+            FString::Printf(TEXT("%s_%d.png"), *BaseFileName, CollisionIndex++));
+    }
 
     const FImageView ImageView(
         Pixels.GetData(),
@@ -192,7 +203,8 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     }
     MeshComponent->UpdateBounds();
 
-    const FTransform MeshTransform(FQuat::Identity, -AssetBounds.Origin);
+    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(AssetBounds, Settings);
+    const FTransform MeshTransform(FQuat::Identity, -FrameCenter);
     PreviewScene.AddComponent(MeshComponent, MeshTransform, false);
 
     if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(MeshComponent))
@@ -212,12 +224,8 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     FlushRenderingCommands();
     PreviewScene.UpdateCaptureContents();
 
-    const FVector SafeExtent(
-        FMath::Max(AssetBounds.BoxExtent.X, MinimumBoundsExtent),
-        FMath::Max(AssetBounds.BoxExtent.Y, MinimumBoundsExtent),
-        FMath::Max(AssetBounds.BoxExtent.Z, MinimumBoundsExtent));
-
-    const FBoxSphereBounds CenteredBounds(FVector::ZeroVector, SafeExtent, SafeExtent.Size());
+    const FBoxSphereBounds FrameRelativeBounds =
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(AssetBounds, Settings, MinimumBoundsExtent);
 
     const float PaddingMultiplier = 1.0f + (FMath::Max(Settings.FramePaddingPercent, 0.0f) * 0.01f);
 
@@ -235,33 +243,58 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     {
         const FVector CameraForward = CameraRotation.Vector();
         float CameraDistance = MinimumCameraDistance;
+        FVector ViewTarget = FVector::ZeroVector;
 
-        if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        EasyThumbnailGenerator::FGeometryFitResult GeometryFit;
+        if (EasyThumbnailGenerator::CalculateGeometryAwareFit(
+                Asset,
+                MeshComponent,
+                AssetBounds,
+                Settings,
+                CameraRotation,
+                1.0f,
+                PaddingMultiplier,
+                MinimumCameraDistance,
+                GeometryFit))
         {
-            OrthoWidth = CalculateOrthoWidth(CenteredBounds, CameraRotation, PaddingMultiplier);
+            ViewTarget = GeometryFit.ViewTarget;
+
+            if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+            {
+                OrthoWidth = GeometryFit.OrthoWidth;
+                CameraDistance = GeometryFit.OrthoCameraDistance;
+            }
+            else
+            {
+                CameraDistance = GeometryFit.PerspectiveDistance;
+            }
+        }
+        else if (Settings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
+        {
+            OrthoWidth = CalculateOrthoWidth(FrameRelativeBounds, CameraRotation, PaddingMultiplier);
 
             const FRotationMatrix CameraMatrix(CameraRotation);
             const FVector CameraView = CameraMatrix.GetUnitAxis(EAxis::X);
             const float HalfDepth =
-                FMath::Abs(CameraView.X) * SafeExtent.X +
-                FMath::Abs(CameraView.Y) * SafeExtent.Y +
-                FMath::Abs(CameraView.Z) * SafeExtent.Z;
+                EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraView, FrameRelativeBounds);
 
-            CameraDistance = FMath::Max(MinimumCameraDistance, (HalfDepth * PaddingMultiplier) + 100.0f);
+            CameraDistance = FMath::Max(
+                MinimumCameraDistance,
+                (HalfDepth * PaddingMultiplier) + 100.0f);
         }
         else
         {
             CameraDistance = FMath::Max(
                 MinimumCameraDistance,
                 CalculatePerspectiveDistance(
-                    CenteredBounds,
+                    FrameRelativeBounds,
                     CameraRotation,
                     Settings.PerspectiveFOV,
                     Settings.PerspectiveFOV,
                     PaddingMultiplier));
         }
 
-        CameraLocation = -CameraForward * CameraDistance;
+        CameraLocation = ViewTarget - (CameraForward * CameraDistance);
     }
 
     UTextureRenderTarget2D* ColorTarget = NewObject<UTextureRenderTarget2D>(GetTransientPackage());
@@ -461,17 +494,11 @@ float FEasyThumbnailGeneratorRenderer::CalculateOrthoWidth(
     const FRotationMatrix CameraMatrix(CameraRotation);
     const FVector CameraRight = CameraMatrix.GetUnitAxis(EAxis::Y);
     const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
-    const FVector Extent = Bounds.BoxExtent;
-
     const float ProjectedHalfWidth =
-        FMath::Abs(CameraRight.X) * Extent.X +
-        FMath::Abs(CameraRight.Y) * Extent.Y +
-        FMath::Abs(CameraRight.Z) * Extent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraRight, Bounds);
 
     const float ProjectedHalfHeight =
-        FMath::Abs(CameraUp.X) * Extent.X +
-        FMath::Abs(CameraUp.Y) * Extent.Y +
-        FMath::Abs(CameraUp.Z) * Extent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraUp, Bounds);
 
     const float RequiredHalfSpan = FMath::Max(ProjectedHalfWidth, ProjectedHalfHeight);
     return FMath::Max(RequiredHalfSpan * 2.0f * PaddingMultiplier, 2.0f);
@@ -488,22 +515,14 @@ float FEasyThumbnailGeneratorRenderer::CalculatePerspectiveDistance(
     const FVector CameraForward = CameraMatrix.GetUnitAxis(EAxis::X);
     const FVector CameraRight = CameraMatrix.GetUnitAxis(EAxis::Y);
     const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
-    const FVector Extent = Bounds.BoxExtent;
-
     const float HalfWidth =
-        FMath::Abs(CameraRight.X) * Extent.X +
-        FMath::Abs(CameraRight.Y) * Extent.Y +
-        FMath::Abs(CameraRight.Z) * Extent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraRight, Bounds);
 
     const float HalfHeight =
-        FMath::Abs(CameraUp.X) * Extent.X +
-        FMath::Abs(CameraUp.Y) * Extent.Y +
-        FMath::Abs(CameraUp.Z) * Extent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraUp, Bounds);
 
     const float HalfDepth =
-        FMath::Abs(CameraForward.X) * Extent.X +
-        FMath::Abs(CameraForward.Y) * Extent.Y +
-        FMath::Abs(CameraForward.Z) * Extent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraForward, Bounds);
 
     const float HorizontalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, HorizontalFOVDegrees));
     const float VerticalFOVRadians = FMath::DegreesToRadians(FMath::Max(1.0f, VerticalFOVDegrees));
