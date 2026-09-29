@@ -187,9 +187,12 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
         ExposureSettings.FixedEV100 = CurrentSettings.ExposureCompensation;
     }
 
-    // Unreal's editor viewport supports drawing an alpha-blended checkerboard under
-    // the scene. Keep this preview-only so generated PNG pixels remain unchanged.
+    // FPreviewScene scene alpha is inverse opacity (opaque geometry resolves near 0),
+    // while the editor checkerboard expects conventional alpha. Invert only the
+    // visualization so the checkerboard stays behind opaque geometry instead of
+    // blending over the asset. This remains preview-only and does not affect PNG output.
     ChannelMaskParams.bDrawAlphaBlendedCheckerboard = CurrentSettings.bShowCheckerboard;
+    ChannelMaskParams.bInvertAlphaChannelMask = CurrentSettings.bShowCheckerboard;
 
     SyncViewToSettings(bRefitCamera);
     RefreshScene();
