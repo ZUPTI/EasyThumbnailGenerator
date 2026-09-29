@@ -187,6 +187,10 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
         ExposureSettings.FixedEV100 = CurrentSettings.ExposureCompensation;
     }
 
+    // Unreal's editor viewport supports drawing an alpha-blended checkerboard under
+    // the scene. Keep this preview-only so generated PNG pixels remain unchanged.
+    ChannelMaskParams.bDrawAlphaBlendedCheckerboard = CurrentSettings.bShowCheckerboard;
+
     SyncViewToSettings(bRefitCamera);
     RefreshScene();
 }
