@@ -16,7 +16,9 @@ public:
 
 private:
     static constexpr float MinimumBoundsExtent = 1.0f;
-    static constexpr float MinimumCameraDistance = 100.0f;
+    // Keep only a small near-plane safety margin. A 100uu floor made small assets
+    // (for example small Quixel rocks) appear far too small after Fit to Frame.
+    static constexpr float MinimumCameraDistance = 10.0f;
 
     static bool GetAssetBounds(UObject* Asset, FBoxSphereBounds& OutBounds);
     static bool RenderAsset(
