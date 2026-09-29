@@ -4,8 +4,10 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
+#include "DrawDebugHelpers.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -137,7 +139,8 @@ void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
         FBoxSphereBounds Bounds;
         if (GetAssetBounds(Bounds))
         {
-            PreviewScene.AddComponent(PreviewComponent, FTransform(FQuat::Identity, -Bounds.Origin), false);
+            const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+            PreviewScene.AddComponent(PreviewComponent, FTransform(FQuat::Identity, -FrameCenter), false);
         }
         else
         {
@@ -171,6 +174,8 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
 {
     CurrentSettings = InSettings;
     CurrentSettings.bUseExplicitCameraTransform = false;
+
+    UpdatePreviewTransform();
 
     PreviewScene.SetLightBrightness(CurrentSettings.DirectionalLightIntensity);
     PreviewScene.SetLightDirection(FRotator(CurrentSettings.DirectionalLightPitch, CurrentSettings.DirectionalLightYaw, 0.0f));
@@ -246,8 +251,65 @@ void FEasyThumbnailGeneratorViewportClient::ClearPreviewComponent()
     }
 }
 
+void FEasyThumbnailGeneratorViewportClient::UpdatePreviewTransform()
+{
+    if (!PreviewComponent)
+    {
+        return;
+    }
+
+    FBoxSphereBounds Bounds;
+    if (!GetAssetBounds(Bounds))
+    {
+        return;
+    }
+
+    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+    PreviewComponent->SetWorldTransform(FTransform(FQuat::Identity, -FrameCenter));
+    PreviewComponent->UpdateComponentToWorld();
+    PreviewComponent->MarkRenderTransformDirty();
+    PreviewComponent->UpdateBounds();
+}
+
+void FEasyThumbnailGeneratorViewportClient::RefreshBoundsVisualizer()
+{
+    UWorld* World = PreviewScene.GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    FlushPersistentDebugLines(World);
+
+    if (!CurrentSettings.bShowBounds)
+    {
+        return;
+    }
+
+    FBoxSphereBounds Bounds;
+    if (!GetAssetBounds(Bounds))
+    {
+        return;
+    }
+
+    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(Bounds, CurrentSettings);
+    const FVector RelativeBoundsCenter = Bounds.Origin - FrameCenter;
+
+    DrawDebugBox(
+        World,
+        RelativeBoundsCenter,
+        Bounds.BoxExtent,
+        FColor::Green,
+        true,
+        -1.0f,
+        0,
+        1.0f);
+}
+
 void FEasyThumbnailGeneratorViewportClient::RefreshScene()
 {
+    RefreshBoundsVisualizer();
+
     if (PreviewScene.GetWorld())
     {
         PreviewScene.GetWorld()->SendAllEndOfFrameUpdates();
@@ -277,10 +339,8 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
         return;
     }
 
-    const FVector SafeExtent(
-        FMath::Max(Bounds.BoxExtent.X, 1.0f),
-        FMath::Max(Bounds.BoxExtent.Y, 1.0f),
-        FMath::Max(Bounds.BoxExtent.Z, 1.0f));
+    const FBoxSphereBounds FrameRelativeBounds =
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(Bounds, CurrentSettings, 1.0f);
 
     const float PaddingMultiplier = 1.0f + (FMath::Max(CurrentSettings.FramePaddingPercent, 0.0f) * 0.01f);
     const FRotationMatrix CameraMatrix(CameraRotation);
@@ -289,19 +349,13 @@ void FEasyThumbnailGeneratorViewportClient::SyncViewToSettings(bool bRefitCamera
     const FVector CameraUp = CameraMatrix.GetUnitAxis(EAxis::Z);
 
     const float HalfWidth =
-        FMath::Abs(CameraRight.X) * SafeExtent.X +
-        FMath::Abs(CameraRight.Y) * SafeExtent.Y +
-        FMath::Abs(CameraRight.Z) * SafeExtent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraRight, FrameRelativeBounds);
 
     const float HalfHeight =
-        FMath::Abs(CameraUp.X) * SafeExtent.X +
-        FMath::Abs(CameraUp.Y) * SafeExtent.Y +
-        FMath::Abs(CameraUp.Z) * SafeExtent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraUp, FrameRelativeBounds);
 
     const float HalfDepth =
-        FMath::Abs(CameraForward.X) * SafeExtent.X +
-        FMath::Abs(CameraForward.Y) * SafeExtent.Y +
-        FMath::Abs(CameraForward.Z) * SafeExtent.Z;
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(CameraForward, FrameRelativeBounds);
 
     float CameraDistance = 100.0f;
     if (CurrentSettings.ProjectionMode == EEasyThumbnailGeneratorProjectionMode::Orthographic)
@@ -712,6 +766,8 @@ void SEasyThumbnailGeneratorWindow::HandleSettingsChanged(const FPropertyChanged
 
     const bool bCameraRelatedChange =
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, Preset) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FramingMode) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FrameOffset) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, ProjectionMode) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraYaw) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraPitch) ||
