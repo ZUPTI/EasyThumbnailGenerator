@@ -8,10 +8,13 @@
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
 #include "DrawDebugHelpers.h"
+#include "DynamicMeshBuilder.h"
+#include "Engine/Engine.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "IDetailsView.h"
+#include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
 #include "Misc/MessageDialog.h"
 #include "Modules/ModuleManager.h"
@@ -123,6 +126,146 @@ void FEasyThumbnailGeneratorViewportClient::Tick(float DeltaSeconds)
     }
 }
 
+void FEasyThumbnailGeneratorViewportClient::Draw(
+    const FSceneView* View,
+    FPrimitiveDrawInterface* PDI)
+{
+    FEditorViewportClient::Draw(View, PDI);
+
+    if (!CurrentSettings.bShowCheckerboard || !View || !PDI || !GEngine)
+    {
+        return;
+    }
+
+    UMaterial* CheckerMaterial = GEngine->VertexColorViewModeMaterial_ColorOnly;
+    if (!CheckerMaterial)
+    {
+        CheckerMaterial = GEngine->VertexColorMaterial;
+    }
+
+    if (!CheckerMaterial)
+    {
+        return;
+    }
+
+    FBoxSphereBounds AssetBounds;
+    if (!GetAssetBounds(AssetBounds))
+    {
+        return;
+    }
+
+    const FVector ViewDirection = View->GetViewDirection().GetSafeNormal();
+    const FVector ViewRight = View->GetViewRight().GetSafeNormal();
+    const FVector ViewUp = View->GetViewUp().GetSafeNormal();
+
+    if (ViewDirection.IsNearlyZero() || ViewRight.IsNearlyZero() || ViewUp.IsNearlyZero())
+    {
+        return;
+    }
+
+    const FBoxSphereBounds FrameRelativeBounds =
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(AssetBounds, CurrentSettings, 1.0f);
+
+    const float HalfAssetDepth =
+        EasyThumbnailGenerator::CalculateProjectedHalfSpan(ViewDirection, FrameRelativeBounds);
+
+    const FVector ViewLocation = GetViewLocation();
+    const float DistanceToFrameCenter = FMath::Max(
+        FVector::DotProduct(-ViewLocation, ViewDirection),
+        10.0f);
+
+    // Place the checkerboard safely behind the entire framed asset. It is submitted as
+    // an editor view element rather than scene geometry, so it cannot affect lighting,
+    // reflections, shadows, or generated PNG output.
+    const float BackgroundDistance =
+        DistanceToFrameCenter + HalfAssetDepth + FMath::Max(50.0f, HalfAssetDepth * 0.25f);
+
+    const FIntRect ViewRect = View->UnscaledViewRect;
+    const float ViewportWidth = FMath::Max(1, ViewRect.Width());
+    const float ViewportHeight = FMath::Max(1, ViewRect.Height());
+    const float ViewportAspectRatio = ViewportWidth / ViewportHeight;
+
+    float HalfBackgroundWidth = 500.0f;
+    float HalfBackgroundHeight = 500.0f;
+
+    if (View->IsPerspectiveProjection())
+    {
+        const float HorizontalFOVRadians =
+            FMath::DegreesToRadians(FMath::Clamp(ViewFOV, 1.0f, 170.0f));
+
+        HalfBackgroundWidth =
+            BackgroundDistance * FMath::Tan(HorizontalFOVRadians * 0.5f) * 1.05f;
+        HalfBackgroundHeight =
+            (HalfBackgroundWidth / FMath::Max(ViewportAspectRatio, 0.01f)) * 1.05f;
+    }
+    else
+    {
+        HalfBackgroundWidth = FMath::Max(GetOrthoZoom() * 0.55f, 10.0f);
+        HalfBackgroundHeight =
+            HalfBackgroundWidth / FMath::Max(ViewportAspectRatio, 0.01f);
+    }
+
+    const FVector PlaneCenter = ViewLocation + ViewDirection * BackgroundDistance;
+    const FVector BottomLeft =
+        PlaneCenter - ViewRight * HalfBackgroundWidth - ViewUp * HalfBackgroundHeight;
+
+    constexpr int32 CheckerColumns = 32;
+    const float FullWidth = HalfBackgroundWidth * 2.0f;
+    const float FullHeight = HalfBackgroundHeight * 2.0f;
+    const float CellSize = FullWidth / static_cast<float>(CheckerColumns);
+    const int32 CheckerRows = FMath::Max(1, FMath::CeilToInt(FullHeight / CellSize));
+
+    FDynamicMeshBuilder MeshBuilder(View->GetFeatureLevel());
+    MeshBuilder.ReserveVertices(CheckerColumns * CheckerRows * 4);
+    MeshBuilder.ReserveTriangles(CheckerColumns * CheckerRows * 2);
+
+    const FVector3f TangentX(ViewRight);
+    const FVector3f TangentY(ViewUp);
+    const FVector3f TangentZ(-ViewDirection);
+
+    const FColor DarkChecker(72, 72, 72);
+    const FColor LightChecker(120, 120, 120);
+
+    for (int32 Y = 0; Y < CheckerRows; ++Y)
+    {
+        for (int32 X = 0; X < CheckerColumns; ++X)
+        {
+            const float X0 = X * CellSize;
+            const float X1 = FMath::Min((X + 1) * CellSize, FullWidth);
+            const float Y0 = Y * CellSize;
+            const float Y1 = FMath::Min((Y + 1) * CellSize, FullHeight);
+
+            const FColor CellColor = ((X + Y) & 1) == 0 ? DarkChecker : LightChecker;
+
+            const FVector P0 = BottomLeft + ViewRight * X0 + ViewUp * Y0;
+            const FVector P1 = BottomLeft + ViewRight * X1 + ViewUp * Y0;
+            const FVector P2 = BottomLeft + ViewRight * X1 + ViewUp * Y1;
+            const FVector P3 = BottomLeft + ViewRight * X0 + ViewUp * Y1;
+
+            const int32 V0 = MeshBuilder.AddVertex(
+                FVector3f(P0), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V1 = MeshBuilder.AddVertex(
+                FVector3f(P1), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V2 = MeshBuilder.AddVertex(
+                FVector3f(P2), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+            const int32 V3 = MeshBuilder.AddVertex(
+                FVector3f(P3), FVector2f::ZeroVector, TangentX, TangentY, TangentZ, CellColor);
+
+            MeshBuilder.AddTriangle(V0, V1, V2);
+            MeshBuilder.AddTriangle(V0, V2, V3);
+        }
+    }
+
+    MeshBuilder.Draw(
+        PDI,
+        FMatrix::Identity,
+        CheckerMaterial->GetRenderProxy(),
+        SDPG_World,
+        true,
+        false,
+        FHitProxyId());
+}
+
 void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
 {
     ClearPreviewComponent();
@@ -186,13 +329,6 @@ void FEasyThumbnailGeneratorViewportClient::ApplySettings(
     {
         ExposureSettings.FixedEV100 = CurrentSettings.ExposureCompensation;
     }
-
-    // FPreviewScene scene alpha is inverse opacity (opaque geometry resolves near 0),
-    // while the editor checkerboard expects conventional alpha. Invert only the
-    // visualization so the checkerboard stays behind opaque geometry instead of
-    // blending over the asset. This remains preview-only and does not affect PNG output.
-    ChannelMaskParams.bDrawAlphaBlendedCheckerboard = CurrentSettings.bShowCheckerboard;
-    ChannelMaskParams.bInvertAlphaChannelMask = CurrentSettings.bShowCheckerboard;
 
     SyncViewToSettings(bRefitCamera);
     RefreshScene();
