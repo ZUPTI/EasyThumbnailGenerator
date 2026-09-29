@@ -42,10 +42,10 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Transparent PNG output with collision-safe auto-incremented filenames
 - Material-aware rendering
 - Perspective and orthographic projection
-- Automatic fit-to-frame
+- Geometry-aware fit-to-frame based on projected mesh vertices
 - Bounds visualizer in the live preview
 - Optional checkerboard background for visualizing transparent areas
-- Bounds Center / Pivot / Custom Offset framing modes
+- Visible Content / Bounds Center / Pivot / Custom Offset framing modes
 - Mouse orbit/pan/zoom in the preview viewport
 - Camera shortcuts:
   - Front
@@ -132,6 +132,8 @@ The preview window intentionally owns the working settings. There is no separate
 
 **Asset Default** is a general-purpose starting point for arbitrary meshes.
 
+Built-in presets use **Visible Content** framing by default. This mode measures the projected mesh geometry from the current camera direction and recenters the frame around the visible silhouette instead of relying only on the asset bounds box. **Bounds Center**, **Pivot**, and **Custom Offset** remain available when you want an explicit framing anchor.
+
 Changing an individual setting switches the session to **Custom**.
 
 ### Saved presets
@@ -143,6 +145,8 @@ Saved presets and the last-used settings are stored as editor per-user/per-proje
 ### Camera shortcuts
 
 Camera shortcut buttons immediately change the view and refit the current asset. They are useful for quickly exploring a consistent silhouette before fine-tuning with the mouse.
+
+`Fit to Frame` uses projected mesh vertex positions when CPU-side geometry data is available, which produces a tighter screen-space fit than projecting the full 3D bounds box. If that geometry data is unavailable, the plugin falls back to the bounds-based fit.
 
 ## Current vs Batch Generation
 
@@ -195,6 +199,8 @@ EasyThumbnailGenerator/
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
             ├── EasyThumbnailGeneratorFraming.h
+            ├── EasyThumbnailGeneratorGeometryFraming.cpp
+            ├── EasyThumbnailGeneratorGeometryFraming.h
             ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
@@ -218,10 +224,6 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 ## Roadmap
 
 Planned areas of work:
-
-### 1.4.0 — Framing & Preview
-
-- Smarter visible-content / silhouette-based fit-to-frame
 
 ### 1.5.0 — Actor & Pose Support
 
