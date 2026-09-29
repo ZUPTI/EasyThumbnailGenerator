@@ -35,6 +35,7 @@ struct FEasyThumbnailGeneratorRenderSettings
     EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::BoundsCenter;
     FVector FrameOffset = FVector::ZeroVector;
     bool bShowBounds = false;
+    bool bShowCheckerboard = false;
     EEasyThumbnailGeneratorProjectionMode ProjectionMode = EEasyThumbnailGeneratorProjectionMode::Perspective;
     float CameraYaw = -90.0f;
     float CameraPitch = 0.0f;
@@ -80,6 +81,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Framing", meta=(DisplayName="Show Bounds", ToolTip="Draw the asset bounds in the live preview. This does not affect the exported PNG."))
     bool bShowBounds;
+
+    UPROPERTY(EditAnywhere, Category="Preview", meta=(DisplayName="Checkerboard Background", ToolTip="Show Unreal Editor's alpha checkerboard behind the live preview. This does not affect the exported PNG."))
+    bool bShowCheckerboard;
 
     UPROPERTY(EditAnywhere, Category="Camera")
     EEasyThumbnailGeneratorProjectionMode ProjectionMode;
