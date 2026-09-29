@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.3.1  
+> **Current version:** 1.4.0 (development)  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -37,9 +37,9 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 
 - Unreal Engine 5.8 native C++ editor plugin
 - Static Mesh and Skeletal Mesh support
-- Content Browser right-click integration
+- Content Browser right-click integration with a camera-style action icon
 - Live 3D preview before export
-- Transparent PNG output
+- Transparent PNG output with collision-safe auto-incremented filenames
 - Material-aware rendering
 - Perspective and orthographic projection
 - Automatic fit-to-frame
@@ -214,12 +214,10 @@ Planned areas of work:
 
 ### 1.4.0 — Framing & Preview
 
-- Camera-style icon next to **Create PNG Thumbnail...** in the Content Browser context menu
 - Bounds visualizer in the preview
 - Bounds-center / pivot / custom-offset framing modes
 - Smarter visible-content / silhouette-based fit-to-frame
 - Checkerboard/transparent preview visualization
-- Filename collision handling with auto-incremented suffixes (`Asset.png`, `Asset_1.png`, `Asset_2.png`) instead of silent overwrite
 
 ### 1.5.0 — Actor & Pose Support
 
