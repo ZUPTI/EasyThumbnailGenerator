@@ -43,6 +43,8 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Material-aware rendering
 - Perspective and orthographic projection
 - Automatic fit-to-frame
+- Bounds visualizer in the live preview
+- Bounds Center / Pivot / Custom Offset framing modes
 - Mouse orbit/pan/zoom in the preview viewport
 - Camera shortcuts:
   - Front
@@ -66,6 +68,8 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Configurable:
   - output resolution
   - frame padding
+  - framing mode and custom framing offset
+  - live bounds visualization
   - projection mode
   - FOV
   - camera yaw/pitch
@@ -188,6 +192,7 @@ EasyThumbnailGenerator/
         └── Private/
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
+            ├── EasyThumbnailGeneratorFraming.h
             ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
@@ -214,8 +219,6 @@ Planned areas of work:
 
 ### 1.4.0 — Framing & Preview
 
-- Bounds visualizer in the preview
-- Bounds-center / pivot / custom-offset framing modes
 - Smarter visible-content / silhouette-based fit-to-frame
 - Checkerboard/transparent preview visualization
 
