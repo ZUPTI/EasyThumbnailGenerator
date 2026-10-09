@@ -8,6 +8,13 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.4.1] - 2026-10-09
+
+### Fixed
+
+- Fixed **C2084 duplicate function definitions in Unity Build** by moving Static Mesh and Skeletal Mesh material assignment helpers into a single shared implementation.
+- Preview and PNG rendering now call the same material helper functions; material selection behavior is unchanged.
+
 ## [1.4.0] - 2026-09-29
 
 ### Added
