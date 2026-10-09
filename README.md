@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.4.0  
+> **Current version:** 1.4.1 (development)  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -201,6 +201,8 @@ EasyThumbnailGenerator/
             ├── EasyThumbnailGeneratorFraming.h
             ├── EasyThumbnailGeneratorGeometryFraming.cpp
             ├── EasyThumbnailGeneratorGeometryFraming.h
+            ├── EasyThumbnailGeneratorMaterialUtils.cpp
+            ├── EasyThumbnailGeneratorMaterialUtils.h
             ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
