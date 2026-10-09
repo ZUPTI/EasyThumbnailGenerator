@@ -1,6 +1,7 @@
 #include "EasyThumbnailGeneratorRenderer.h"
 #include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorGeometryFraming.h"
+#include "EasyThumbnailGeneratorMaterialUtils.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
@@ -22,42 +23,6 @@
 
 #define LOCTEXT_NAMESPACE "EasyThumbnailGeneratorRenderer"
 
-namespace EasyThumbnailGenerator
-{
-    static void ApplyStaticMeshMaterials(UStaticMeshComponent* MeshComponent, const UStaticMesh* StaticMesh)
-    {
-        if (!MeshComponent || !StaticMesh)
-        {
-            return;
-        }
-
-        const TArray<FStaticMaterial>& Materials = StaticMesh->GetStaticMaterials();
-        for (int32 MaterialIndex = 0; MaterialIndex < Materials.Num(); ++MaterialIndex)
-        {
-            if (UMaterialInterface* Material = Materials[MaterialIndex].MaterialInterface)
-            {
-                MeshComponent->SetMaterial(MaterialIndex, Material);
-            }
-        }
-    }
-
-    static void ApplySkeletalMeshMaterials(USkeletalMeshComponent* MeshComponent, const USkeletalMesh* SkeletalMesh)
-    {
-        if (!MeshComponent || !SkeletalMesh)
-        {
-            return;
-        }
-
-        const TArray<FSkeletalMaterial>& Materials = SkeletalMesh->GetMaterials();
-        for (int32 MaterialIndex = 0; MaterialIndex < Materials.Num(); ++MaterialIndex)
-        {
-            if (UMaterialInterface* Material = Materials[MaterialIndex].MaterialInterface)
-            {
-                MeshComponent->SetMaterial(MaterialIndex, Material);
-            }
-        }
-    }
-}
 
 bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
     UObject* Asset,
