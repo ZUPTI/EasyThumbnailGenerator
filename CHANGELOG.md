@@ -8,7 +8,7 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
-## [1.4.1] - Unreleased
+## [1.4.1] - 2026-10-09
 
 ### Fixed
 
