@@ -6,6 +6,7 @@
 #include "EasyThumbnailGeneratorRenderer.h"
 #include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorGeometryFraming.h"
+#include "EasyThumbnailGeneratorMaterialUtils.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 #include "EasyThumbnailGeneratorUserSettings.h"
 #include "DrawDebugHelpers.h"
@@ -39,40 +40,6 @@
 
 namespace EasyThumbnailGenerator
 {
-    static void ApplyStaticMeshMaterials(UStaticMeshComponent* MeshComponent, const UStaticMesh* StaticMesh)
-    {
-        if (!MeshComponent || !StaticMesh)
-        {
-            return;
-        }
-
-        const TArray<FStaticMaterial>& Materials = StaticMesh->GetStaticMaterials();
-        for (int32 MaterialIndex = 0; MaterialIndex < Materials.Num(); ++MaterialIndex)
-        {
-            if (UMaterialInterface* Material = Materials[MaterialIndex].MaterialInterface)
-            {
-                MeshComponent->SetMaterial(MaterialIndex, Material);
-            }
-        }
-    }
-
-    static void ApplySkeletalMeshMaterials(USkeletalMeshComponent* MeshComponent, const USkeletalMesh* SkeletalMesh)
-    {
-        if (!MeshComponent || !SkeletalMesh)
-        {
-            return;
-        }
-
-        const TArray<FSkeletalMaterial>& Materials = SkeletalMesh->GetMaterials();
-        for (int32 MaterialIndex = 0; MaterialIndex < Materials.Num(); ++MaterialIndex)
-        {
-            if (UMaterialInterface* Material = Materials[MaterialIndex].MaterialInterface)
-            {
-                MeshComponent->SetMaterial(MaterialIndex, Material);
-            }
-        }
-    }
-
     static void ShowSuccessNotification(const FText& Text)
     {
         FNotificationInfo Info(Text);
