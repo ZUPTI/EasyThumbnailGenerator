@@ -163,7 +163,6 @@ namespace EasyThumbnailGenerator
             const TArray<FColor>& Pixels,
             FText& OutError)
         {
-            const FText NameError = FText::GetEmpty();
             if (!FPackageName::IsValidLongPackageName(
                     FStringView(LongPackageName), false, static_cast<FText*>(nullptr)))
             {
@@ -173,18 +172,37 @@ namespace EasyThumbnailGenerator
                 return false;
             }
 
-            UPackage* Package = CreatePackage(*LongPackageName);
+            const bool bPackageOnDisk =
+                FPackageName::DoesPackageExist(LongPackageName, nullptr, false);
+            UTexture2D* Texture = bPackageOnDisk
+                ? LoadObject<UTexture2D>(
+                    nullptr, *(LongPackageName + TEXT(".") + AssetName))
+                : nullptr;
+
+            if (bPackageOnDisk && !Texture)
+            {
+                OutError = FText::Format(
+                    LOCTEXT("ExistingTextureLoadFailed", "The existing asset cannot be loaded as a Texture2D: {0}"),
+                    FText::FromString(LongPackageName));
+                return false;
+            }
+
+            UPackage* Package = Texture ? Texture->GetOutermost() : CreatePackage(*LongPackageName);
             if (!Package)
             {
                 OutError = LOCTEXT("TexturePackageFailed", "Could not create the Texture Asset package.");
                 return false;
             }
 
-            UTexture2D* Texture = FindObject<UTexture2D>(Package, *AssetName);
+            if (!Texture)
+            {
+                Texture = FindObject<UTexture2D>(Package, *AssetName);
+            }
+
             if (!Texture && FindObject<UObject>(Package, *AssetName))
             {
                 OutError = FText::Format(
-                    LOCTEXT("TextureNameOccupied", "An asset with a different type already uses this name: {0}"),
+                    LOCTEXT("TextureNameOccupied", "An asset of another type already uses this name: {0}"),
                     FText::FromString(LongPackageName));
                 return false;
             }
@@ -192,27 +210,10 @@ namespace EasyThumbnailGenerator
             const bool bNewTexture = Texture == nullptr;
             if (bNewTexture)
             {
-                // Existing package may be on disk without having been loaded yet.
-                if (FPackageName::DoesPackageExist(LongPackageName, nullptr, false))
-                {
-                    Texture = LoadObject<UTexture2D>(
-                        nullptr,
-                        *(LongPackageName + TEXT(".") + AssetName));
-                    if (!Texture)
-                    {
-                        OutError = FText::Format(
-                            LOCTEXT("ExistingTextureLoadFailed", "Could not load existing Texture Asset: {0}"),
-                            FText::FromString(LongPackageName));
-                        return false;
-                    }
-                }
-                else
-                {
-                    Texture = NewObject<UTexture2D>(
-                        Package,
-                        *AssetName,
-                        RF_Public | RF_Standalone | RF_Transactional);
-                }
+                Texture = NewObject<UTexture2D>(
+                    Package,
+                    *AssetName,
+                    RF_Public | RF_Standalone | RF_Transactional);
             }
 
             if (!Texture)
