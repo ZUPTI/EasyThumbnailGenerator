@@ -53,7 +53,7 @@ struct FEasyThumbnailGeneratorRenderSettings
     FString PNGOutputDirectory = TEXT("Saved/Thumbnails");
     FString TextureAssetDirectory = TEXT("/Game/Thumbnails");
     FString SourcePrefixToStrip;
-    FString OutputPrefix;
+    FString OutputPrefix = TEXT("T_");
     FString FilenameTemplate = TEXT("{Prefix}{BaseName}");
     float FramePaddingPercent = 5.0f;
     EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::VisibleContent;
