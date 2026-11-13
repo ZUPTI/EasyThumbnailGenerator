@@ -137,8 +137,10 @@ namespace EasyThumbnailGenerator
                 return false;
             }
 
+            // FImageView's UE 5.8 constructor takes a mutable void* even though
+            // SaveImageByExtension only reads these pixels.
             const FImageView ImageView(
-                Pixels.GetData(),
+                const_cast<FColor*>(Pixels.GetData()),
                 Settings.OutputResolution,
                 Settings.OutputResolution,
                 1,
