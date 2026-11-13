@@ -12,7 +12,8 @@ public:
         UObject* Asset,
         const FEasyThumbnailGeneratorRenderSettings& Settings,
         FString& OutFilePath,
-        FText& OutError);
+        FText& OutError,
+        bool* bOutSkipped = nullptr);
 
 private:
     static constexpr float MinimumBoundsExtent = 1.0f;
