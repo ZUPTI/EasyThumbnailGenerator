@@ -1370,7 +1370,7 @@ void SEasyThumbnailGeneratorWindow::GenerateAssets(bool bGenerateAll)
     {
         FMessageDialog::Open(
             EAppMsgType::Ok,
-            FText::FromString(FString::Join(FailureMessages, TEXT("\\n"))),
+            FText::FromString(FString::Join(FailureMessages, TEXT("\n"))),
             LOCTEXT("GenerationFailureTitle", "Easy Thumbnail Generator"));
     }
 
