@@ -5,6 +5,13 @@ UEasyThumbnailGeneratorSessionSettings::UEasyThumbnailGeneratorSessionSettings()
     ApplyPreset(EEasyThumbnailGeneratorPreset::WeaponSide);
     Preset = EEasyThumbnailGeneratorPreset::WeaponSide;
     OutputResolution = 1024;
+    OutputMode = EEasyThumbnailGeneratorOutputMode::PNG;
+    OverwritePolicy = EEasyThumbnailGeneratorOverwritePolicy::AutoIncrement;
+    PNGOutputDirectory = TEXT("Saved/Thumbnails");
+    TextureAssetDirectory = TEXT("/Game/Thumbnails");
+    SourcePrefixToStrip.Reset();
+    OutputPrefix = TEXT("T_");
+    FilenameTemplate = TEXT("{Prefix}{BaseName}");
     FramePaddingPercent = 5.0f;
 }
 
@@ -73,6 +80,13 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyRenderSettings(
 {
     Preset = InPreset;
     OutputResolution = Settings.OutputResolution;
+    OutputMode = Settings.OutputMode;
+    OverwritePolicy = Settings.OverwritePolicy;
+    PNGOutputDirectory = Settings.PNGOutputDirectory;
+    TextureAssetDirectory = Settings.TextureAssetDirectory;
+    SourcePrefixToStrip = Settings.SourcePrefixToStrip;
+    OutputPrefix = Settings.OutputPrefix;
+    FilenameTemplate = Settings.FilenameTemplate;
     FramePaddingPercent = Settings.FramePaddingPercent;
     FramingMode = Settings.FramingMode;
     FrameOffset = Settings.FrameOffset;
@@ -94,6 +108,13 @@ FEasyThumbnailGeneratorRenderSettings UEasyThumbnailGeneratorSessionSettings::Ma
 {
     FEasyThumbnailGeneratorRenderSettings Settings;
     Settings.OutputResolution = OutputResolution;
+    Settings.OutputMode = OutputMode;
+    Settings.OverwritePolicy = OverwritePolicy;
+    Settings.PNGOutputDirectory = PNGOutputDirectory;
+    Settings.TextureAssetDirectory = TextureAssetDirectory;
+    Settings.SourcePrefixToStrip = SourcePrefixToStrip;
+    Settings.OutputPrefix = OutputPrefix;
+    Settings.FilenameTemplate = FilenameTemplate;
     Settings.FramePaddingPercent = FramePaddingPercent;
     Settings.FramingMode = FramingMode;
     Settings.FrameOffset = FrameOffset;

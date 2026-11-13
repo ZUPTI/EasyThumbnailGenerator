@@ -19,6 +19,13 @@ Use this checklist for every Easy Thumbnail Generator release.
 - [ ] Verify geometry-aware framing works on both Static Mesh and Skeletal Mesh assets and falls back safely when CPU geometry data is unavailable.
 - [ ] Test multi-selection / `Generate All` when batch behavior changed.
 - [ ] Test saved presets and last-used settings when configuration behavior changed.
-- [ ] Verify output under `Saved/Thumbnails`.
+- [ ] Verify legacy PNG defaults under `Saved/Thumbnails`.
+- [ ] Verify `SM_Rock` + source prefix `SM_` + output prefix `T_` produces `T_Rock` in PNG, Texture Asset, and Both modes.
+- [ ] Verify filename tokens `{AssetName}`, `{BaseName}`, `{Prefix}` and reject invalid template characters.
+- [ ] Verify custom absolute and project-relative PNG directories and /Game Texture Asset directory.
+- [ ] Verify Auto Increment, Overwrite and Skip Existing for PNG, Texture Asset and Both; confirm other asset types cannot be overwritten.
+- [ ] Verify output destinations, prefixes, templates, policy, and mode persist through Save/Load Preset and Last Used.
+- [ ] Verify Content Browser discovers the generated Texture2D, transparency is preserved, and overwrite updates the existing asset.
+- [ ] Verify Generate Current and Generate All with PNG / Texture Asset / Both and failed/skipped file reporting.
 - [ ] Create the release ZIP from the clean source tree without `Binaries`, `Intermediate`, `Saved`, or IDE-generated files.
 - [ ] Use the matching `CHANGELOG.md` section as the basis for GitHub Release notes.

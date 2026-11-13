@@ -1158,6 +1158,13 @@ void SEasyThumbnailGeneratorWindow::HandleSavedPresetSelectionChanged(
     {
         PresetNameTextBox->SetText(FText::FromString(*Item));
     }
+
+    // Apply presets selected by the user immediately. Programmatic selections
+    // made during Save/Rename use Direct and must not reapply older settings.
+    if (Item.IsValid() && SelectInfo != ESelectInfo::Direct)
+    {
+        HandleLoadPresetClicked();
+    }
 }
 
 FText SEasyThumbnailGeneratorWindow::GetSelectedSavedPresetText() const
@@ -1292,8 +1299,42 @@ void SEasyThumbnailGeneratorWindow::GenerateAssets(bool bGenerateAll)
     }
 
     int32 SuccessCount = 0;
+    int32 SkippedCount = 0;
     FString LastOutputPath;
     TArray<FString> FailureMessages;
+
+    auto GenerateOne = [&](const FAssetData& AssetData, const FEasyThumbnailGeneratorRenderSettings& Settings)
+    {
+        UObject* Asset = AssetData.GetAsset();
+        if (!Asset)
+        {
+            FailureMessages.Add(FString::Printf(
+                TEXT("%s: Could not load asset."), *AssetData.AssetName.ToString()));
+            return;
+        }
+
+        FString OutputPath;
+        FText Error;
+        bool bSkipped = false;
+        if (FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
+                Asset, Settings, OutputPath, Error, &bSkipped))
+        {
+            if (bSkipped)
+            {
+                ++SkippedCount;
+            }
+            else
+            {
+                ++SuccessCount;
+                LastOutputPath = MoveTemp(OutputPath);
+            }
+        }
+        else
+        {
+            FailureMessages.Add(FString::Printf(
+                TEXT("%s: %s"), *AssetData.AssetName.ToString(), *Error.ToString()));
+        }
+    };
 
     if (bGenerateAll)
     {
@@ -1302,52 +1343,34 @@ void SEasyThumbnailGeneratorWindow::GenerateAssets(bool bGenerateAll)
 
         for (const FAssetData& AssetData : SelectedAssets)
         {
-            UObject* Asset = AssetData.GetAsset();
-            if (!Asset)
-            {
-                continue;
-            }
-
-            FString OutputPath;
-            FText Error;
-            if (FEasyThumbnailGeneratorRenderer::GenerateThumbnail(Asset, Settings, OutputPath, Error))
-            {
-                ++SuccessCount;
-                LastOutputPath = MoveTemp(OutputPath);
-            }
-            else
-            {
-                FailureMessages.Add(FString::Printf(TEXT("%s: %s"), *AssetData.AssetName.ToString(), *Error.ToString()));
-            }
+            GenerateOne(AssetData, Settings);
         }
     }
     else
     {
-        const FAssetData& AssetData = SelectedAssets[CurrentAssetIndex];
-        UObject* Asset = AssetData.GetAsset();
-        if (Asset)
-        {
-            FEasyThumbnailGeneratorRenderSettings Settings = BuildRenderSettingsFromViewport(true);
-            FString OutputPath;
-            FText Error;
-            if (FEasyThumbnailGeneratorRenderer::GenerateThumbnail(Asset, Settings, OutputPath, Error))
-            {
-                SuccessCount = 1;
-                LastOutputPath = MoveTemp(OutputPath);
-            }
-            else
-            {
-                FailureMessages.Add(FString::Printf(TEXT("%s: %s"), *AssetData.AssetName.ToString(), *Error.ToString()));
-            }
-        }
+        const FEasyThumbnailGeneratorRenderSettings Settings =
+            BuildRenderSettingsFromViewport(true);
+        GenerateOne(SelectedAssets[CurrentAssetIndex], Settings);
     }
 
     if (SuccessCount > 0)
     {
         const FText NotificationText = SuccessCount == 1
-            ? FText::Format(LOCTEXT("SingleThumbnailCreated", "PNG thumbnail created: {0}"), FText::FromString(LastOutputPath))
-            : FText::Format(LOCTEXT("MultipleThumbnailsCreated", "Created {0} PNG thumbnails in Saved/Thumbnails."), FText::AsNumber(SuccessCount));
+            ? FText::Format(
+                LOCTEXT("SingleThumbnailCreated", "Thumbnail output created: {0}"),
+                FText::FromString(LastOutputPath))
+            : FText::Format(
+                LOCTEXT("MultipleThumbnailsCreated", "Created outputs for {0} assets."),
+                FText::AsNumber(SuccessCount));
         EasyThumbnailGenerator::ShowSuccessNotification(NotificationText);
+    }
+
+    if (SkippedCount > 0)
+    {
+        EasyThumbnailGenerator::ShowSuccessNotification(
+            FText::Format(
+                LOCTEXT("ThumbnailsSkipped", "Skipped {0} existing thumbnail outputs."),
+                FText::AsNumber(SkippedCount)));
     }
 
     if (!FailureMessages.IsEmpty())
@@ -1406,7 +1429,7 @@ FText SEasyThumbnailGeneratorWindow::GetSelectionSummaryText() const
     {
         return LOCTEXT(
             "SingleSelectionSummary",
-            "Generate Current uses the live viewport camera and writes a transparent PNG to Saved/Thumbnails.");
+            "Generate Current uses the live viewport camera and the selected output destination(s). Defaults to a transparent PNG in Saved/Thumbnails.");
     }
 
     return FText::Format(

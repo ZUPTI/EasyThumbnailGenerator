@@ -12,6 +12,22 @@ enum class EEasyThumbnailGeneratorProjectionMode : uint8
 };
 
 UENUM()
+enum class EEasyThumbnailGeneratorOutputMode : uint8
+{
+    PNG UMETA(DisplayName = "PNG"),
+    TextureAsset UMETA(DisplayName = "Texture Asset"),
+    Both UMETA(DisplayName = "Both")
+};
+
+UENUM()
+enum class EEasyThumbnailGeneratorOverwritePolicy : uint8
+{
+    AutoIncrement UMETA(DisplayName = "Auto Increment"),
+    Overwrite UMETA(DisplayName = "Overwrite"),
+    SkipExisting UMETA(DisplayName = "Skip Existing")
+};
+
+UENUM()
 enum class EEasyThumbnailGeneratorFramingMode : uint8
 {
     VisibleContent UMETA(DisplayName = "Visible Content"),
@@ -32,6 +48,13 @@ enum class EEasyThumbnailGeneratorPreset : uint8
 struct FEasyThumbnailGeneratorRenderSettings
 {
     int32 OutputResolution = 1024;
+    EEasyThumbnailGeneratorOutputMode OutputMode = EEasyThumbnailGeneratorOutputMode::PNG;
+    EEasyThumbnailGeneratorOverwritePolicy OverwritePolicy = EEasyThumbnailGeneratorOverwritePolicy::AutoIncrement;
+    FString PNGOutputDirectory = TEXT("Saved/Thumbnails");
+    FString TextureAssetDirectory = TEXT("/Game/Thumbnails");
+    FString SourcePrefixToStrip;
+    FString OutputPrefix = TEXT("T_");
+    FString FilenameTemplate = TEXT("{Prefix}{BaseName}");
     float FramePaddingPercent = 5.0f;
     EEasyThumbnailGeneratorFramingMode FramingMode = EEasyThumbnailGeneratorFramingMode::VisibleContent;
     FVector FrameOffset = FVector::ZeroVector;
@@ -70,6 +93,27 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Output", meta=(ClampMin="64", ClampMax="4096", UIMin="64", UIMax="4096"))
     int32 OutputResolution;
+
+    UPROPERTY(EditAnywhere, Category="Output", meta=(DisplayName="Output Mode"))
+    EEasyThumbnailGeneratorOutputMode OutputMode;
+
+    UPROPERTY(EditAnywhere, Category="Output", meta=(DisplayName="Overwrite Policy"))
+    EEasyThumbnailGeneratorOverwritePolicy OverwritePolicy;
+
+    UPROPERTY(EditAnywhere, Category="Output", meta=(DisplayName="PNG Directory", EditCondition="OutputMode != EEasyThumbnailGeneratorOutputMode::TextureAsset", ToolTip="Absolute path or directory relative to the project root. Default: Saved/Thumbnails."))
+    FString PNGOutputDirectory;
+
+    UPROPERTY(EditAnywhere, Category="Output", meta=(DisplayName="Texture Asset Directory", EditCondition="OutputMode != EEasyThumbnailGeneratorOutputMode::PNG", ToolTip="Long package path under /Game, for example /Game/UI/Thumbnails."))
+    FString TextureAssetDirectory;
+
+    UPROPERTY(EditAnywhere, Category="Output Naming", meta=(DisplayName="Source Prefix to Remove", ToolTip="Remove this exact leading prefix before constructing the output name. Example: SM_Rock with SM_ becomes Rock."))
+    FString SourcePrefixToStrip;
+
+    UPROPERTY(EditAnywhere, Category="Output Naming", meta=(DisplayName="Output Prefix", ToolTip="Prepended via the {Prefix} filename token. Example: T_."))
+    FString OutputPrefix;
+
+    UPROPERTY(EditAnywhere, Category="Output Naming", meta=(DisplayName="Filename Template", ToolTip="Tokens: {AssetName} (original), {BaseName} (after stripping source prefix), {Prefix} (new prefix). Example: {Prefix}{BaseName} outputs T_Rock from SM_Rock."))
+    FString FilenameTemplate;
 
     UPROPERTY(EditAnywhere, Category="Output", meta=(ClampMin="0.0", ClampMax="50.0", UIMin="0.0", UIMax="50.0"))
     float FramePaddingPercent;

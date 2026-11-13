@@ -3,6 +3,13 @@
 void FEasyThumbnailGeneratorSavedPreset::FromRenderSettings(const FEasyThumbnailGeneratorRenderSettings& Settings)
 {
     OutputResolution = Settings.OutputResolution;
+    OutputMode = Settings.OutputMode;
+    OverwritePolicy = Settings.OverwritePolicy;
+    PNGOutputDirectory = Settings.PNGOutputDirectory;
+    TextureAssetDirectory = Settings.TextureAssetDirectory;
+    SourcePrefixToStrip = Settings.SourcePrefixToStrip;
+    OutputPrefix = Settings.OutputPrefix;
+    FilenameTemplate = Settings.FilenameTemplate;
     FramePaddingPercent = Settings.FramePaddingPercent;
     FramingMode = Settings.FramingMode;
     FrameOffset = Settings.FrameOffset;
@@ -24,6 +31,13 @@ FEasyThumbnailGeneratorRenderSettings FEasyThumbnailGeneratorSavedPreset::ToRend
 {
     FEasyThumbnailGeneratorRenderSettings Settings;
     Settings.OutputResolution = OutputResolution;
+    Settings.OutputMode = OutputMode;
+    Settings.OverwritePolicy = OverwritePolicy;
+    Settings.PNGOutputDirectory = PNGOutputDirectory;
+    Settings.TextureAssetDirectory = TextureAssetDirectory;
+    Settings.SourcePrefixToStrip = SourcePrefixToStrip;
+    Settings.OutputPrefix = OutputPrefix;
+    Settings.FilenameTemplate = FilenameTemplate;
     Settings.FramePaddingPercent = FramePaddingPercent;
     Settings.FramingMode = FramingMode;
     Settings.FrameOffset = FrameOffset;

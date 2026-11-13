@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.4.1  
+> **Current version:** 1.5.0  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -39,7 +39,10 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - Static Mesh and Skeletal Mesh support
 - Content Browser right-click integration with a camera-style action icon
 - Live 3D preview before export
-- Transparent PNG output with collision-safe auto-incremented filenames
+- Transparent PNG output, native Unreal Texture2D asset output, or both together
+- Configurable PNG and Texture Asset output directories
+- Filename templates and prefix replacement: `SM_Rock` + strip `SM_` + prefix `T_` becomes `T_Rock`
+- Auto Increment / Overwrite / Skip Existing collision policies
 - Material-aware rendering
 - Perspective and orthographic projection
 - Geometry-aware fit-to-frame based on projected mesh vertices
@@ -67,6 +70,10 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 - **Generate Current** preserves the current live viewport camera framing
 - **Generate All** fits each selected asset independently while reusing the current camera direction and render settings
 - Configurable:
+  - output mode (PNG / Texture Asset / Both)
+  - PNG output directory and Content Browser Texture Asset directory
+  - source prefix to remove, output prefix and filename template
+  - overwrite policy
   - output resolution
   - frame padding
   - framing mode and custom framing offset
@@ -120,6 +127,26 @@ Regenerate project files if needed, then build your Editor target with Unreal En
 Saved/Thumbnails/
 ```
 
+## Output Workflow (v1.5.0)
+
+**Output Mode** controls where the thumbnail goes:
+
+- **PNG** (default): exports a PNG to the **PNG Directory** (default: `Saved/Thumbnails`, relative to the project root); an absolute filesystem directory also works.
+- **Texture Asset**: creates/saves a native `UTexture2D` asset under **Texture Asset Directory** (default: `/Game/Thumbnails`).
+- **Both**: writes PNG and Texture Asset with the **same generated name**.
+
+**Filename Template** defaults to `{Prefix}{BaseName}`. Supported tokens are:
+
+- `{AssetName}`: the original source asset name
+- `{BaseName}`: the original name after removing the configured **Source Prefix to Remove**, if it matches the start
+- `{Prefix}`: the new **Output Prefix**
+
+For example, set `Source Prefix to Remove = SM_` and keep the default `Output Prefix = T_` and filename template. Source mesh `SM_Rock` produces `T_Rock.png` and/or `/Game/Thumbnails/T_Rock`, **not** `T_SM_Rock`. If `SM_` is absent, the prefix is simply added to the unchanged source name.
+
+**Overwrite Policy**: `Auto Increment` (default, safe, adds `_1`, `_2`...), `Overwrite` (replaces the existing file or updates an existing `UTexture2D`), or `Skip Existing`. In **Both** mode, a collision on either destination triggers a common increment or skips both, ensuring matched names.
+
+**Saved presets** and last-used settings store all destination, template, prefix, mode, and overwrite preferences. Newly created settings and older presets without these fields default to PNG-only, `Saved/Thumbnails`, an empty **Source Prefix to Remove**, `T_` **Output Prefix**, `{Prefix}{BaseName}`, and Auto Increment. An explicitly saved empty output prefix is preserved. The render/camera settings remain independent of output paths.
+
 ## Preview Workflow
 
 The preview window intentionally owns the working settings. There is no separate plugin page under Project Settings.
@@ -138,7 +165,7 @@ Changing an individual setting switches the session to **Custom**.
 
 ### Saved presets
 
-The **Saved Presets** panel lets you give the current setup a name and save it for later.
+The **Saved Presets** panel lets you give the current setup a name and save it for later. Choosing a preset from the dropdown **automatically loads** its settings and updates the live preview; the Load button can also reapply the selected preset.
 
 Saved presets and the last-used settings are stored as editor per-user/per-project configuration. They are not asset files and do not need to be committed to source control.
 
@@ -160,7 +187,7 @@ Camera shortcut buttons immediately change the view and refit the current asset.
 
 ## Transparent Background
 
-The live preview uses an editor preview scene for useful lighting and material evaluation. The final PNG is rendered separately with an alpha-aware capture path, so the exported image keeps a transparent background rather than capturing the editor window itself.
+The live preview uses an editor preview scene for useful lighting and material evaluation. PNG and Texture Asset outputs are rendered separately with an alpha-aware capture path, so the exported image keeps a transparent background rather than capturing the editor window itself.
 
 For materials whose normal SceneColor alpha does not provide usable coverage (notably some translucent/additive cases), the renderer also captures a material-independent geometry mask as a fallback so visible geometry is not silently dropped from the exported PNG.
 
@@ -203,6 +230,8 @@ EasyThumbnailGenerator/
             ├── EasyThumbnailGeneratorGeometryFraming.h
             ├── EasyThumbnailGeneratorMaterialUtils.cpp
             ├── EasyThumbnailGeneratorMaterialUtils.h
+            ├── EasyThumbnailGeneratorOutputWriter.cpp
+            ├── EasyThumbnailGeneratorOutputWriter.h
             ├── EasyThumbnailGeneratorPreviewLighting.h
             ├── EasyThumbnailGeneratorSessionSettings.cpp
             ├── EasyThumbnailGeneratorUserSettings.cpp
@@ -236,7 +265,7 @@ Planned areas of work:
 - Overwrite policies: Auto Increment (default), Overwrite, Skip Existing
 - Generate native Unreal Engine **Texture assets** while keeping PNG export as the default
 - Output modes: **PNG / Texture Asset / Both**
-- Backward-compatible defaults: `Saved/Thumbnails`, empty prefixes, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
+- Defaults: `Saved/Thumbnails`, empty source prefix, `T_` output prefix, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
 
 ### 1.6.0 — Actor & Pose Support
 
