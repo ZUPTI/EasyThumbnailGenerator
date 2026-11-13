@@ -1158,6 +1158,13 @@ void SEasyThumbnailGeneratorWindow::HandleSavedPresetSelectionChanged(
     {
         PresetNameTextBox->SetText(FText::FromString(*Item));
     }
+
+    // Apply presets selected by the user immediately. Programmatic selections
+    // made during Save/Rename use Direct and must not reapply older settings.
+    if (Item.IsValid() && SelectInfo != ESelectInfo::Direct)
+    {
+        HandleLoadPresetClicked();
+    }
 }
 
 FText SEasyThumbnailGeneratorWindow::GetSelectedSavedPresetText() const
