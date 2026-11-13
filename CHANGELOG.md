@@ -8,6 +8,21 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.5.0] - Unreleased
+
+### Added
+
+- Added PNG, native Texture Asset and Both output modes.
+- Added configurable filesystem PNG directory and /Game Texture Asset destination, preserved per saved preset.
+- Added source-prefix removal, output prefix and filename templates with `{AssetName}`, `{BaseName}` and `{Prefix}` tokens; for example, `SM_Rock` becomes `T_Rock`.
+- Added Auto Increment, Overwrite and Skip Existing collision policies for generated outputs.
+- Saved presets and last-used settings now include output destinations, modes, naming and collision behavior.
+
+### Changed
+
+- `Generate Current` and `Generate All` share output handling for both file and Content Browser destinations.
+- Retained the v1.4.1 default output mode (PNG in `Saved/Thumbnails`) with no output prefix and Auto Increment naming.
+
 ## [1.4.1] - 2026-10-09
 
 ### Fixed
