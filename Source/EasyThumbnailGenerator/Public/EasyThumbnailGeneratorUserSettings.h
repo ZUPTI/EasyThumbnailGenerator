@@ -17,6 +17,27 @@ struct FEasyThumbnailGeneratorSavedPreset
     int32 OutputResolution = 1024;
 
     UPROPERTY()
+    EEasyThumbnailGeneratorOutputMode OutputMode = EEasyThumbnailGeneratorOutputMode::PNG;
+
+    UPROPERTY()
+    EEasyThumbnailGeneratorOverwritePolicy OverwritePolicy = EEasyThumbnailGeneratorOverwritePolicy::AutoIncrement;
+
+    UPROPERTY()
+    FString PNGOutputDirectory = TEXT("Saved/Thumbnails");
+
+    UPROPERTY()
+    FString TextureAssetDirectory = TEXT("/Game/Thumbnails");
+
+    UPROPERTY()
+    FString SourcePrefixToStrip;
+
+    UPROPERTY()
+    FString OutputPrefix;
+
+    UPROPERTY()
+    FString FilenameTemplate = TEXT("{Prefix}{BaseName}");
+
+    UPROPERTY()
     float FramePaddingPercent = 5.0f;
 
     UPROPERTY()
