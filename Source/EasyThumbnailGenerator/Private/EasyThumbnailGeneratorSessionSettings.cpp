@@ -10,7 +10,7 @@ UEasyThumbnailGeneratorSessionSettings::UEasyThumbnailGeneratorSessionSettings()
     PNGOutputDirectory = TEXT("Saved/Thumbnails");
     TextureAssetDirectory = TEXT("/Game/Thumbnails");
     SourcePrefixToStrip.Reset();
-    OutputPrefix.Reset();
+    OutputPrefix = TEXT("T_");
     FilenameTemplate = TEXT("{Prefix}{BaseName}");
     FramePaddingPercent = 5.0f;
 }
