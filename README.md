@@ -165,7 +165,7 @@ Changing an individual setting switches the session to **Custom**.
 
 ### Saved presets
 
-The **Saved Presets** panel lets you give the current setup a name and save it for later.
+The **Saved Presets** panel lets you give the current setup a name and save it for later. Choosing a preset from the dropdown **automatically loads** its settings and updates the live preview; the Load button can also reapply the selected preset.
 
 Saved presets and the last-used settings are stored as editor per-user/per-project configuration. They are not asset files and do not need to be committed to source control.
 
