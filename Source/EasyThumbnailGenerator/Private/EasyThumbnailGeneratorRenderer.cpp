@@ -2,6 +2,7 @@
 #include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorMaterialUtils.h"
+#include "EasyThumbnailGeneratorOutputWriter.h"
 #include "EasyThumbnailGeneratorPreviewLighting.h"
 
 #include "Components/SceneCaptureComponent2D.h"
@@ -28,10 +29,15 @@ bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
     UObject* Asset,
     const FEasyThumbnailGeneratorRenderSettings& Settings,
     FString& OutFilePath,
-    FText& OutError)
+    FText& OutError,
+    bool* bOutSkipped)
 {
     OutFilePath.Reset();
     OutError = FText::GetEmpty();
+    if (bOutSkipped)
+    {
+        *bOutSkipped = false;
+    }
 
     if (!IsValid(Asset))
     {
@@ -52,43 +58,16 @@ bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
         return false;
     }
 
-    const FString OutputDirectory = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Thumbnails"));
-    if (!IFileManager::Get().MakeDirectory(*OutputDirectory, true) && !IFileManager::Get().DirectoryExists(*OutputDirectory))
+    bool bSkipped = false;
+    const bool bSaved = EasyThumbnailGenerator::WriteThumbnailOutputs(
+        Asset, Settings, Pixels, OutFilePath, bSkipped, OutError);
+
+    if (bOutSkipped)
     {
-        OutError = FText::Format(
-            LOCTEXT("CreateDirectoryFailed", "Could not create thumbnail output directory:\n{0}"),
-            FText::FromString(OutputDirectory));
-        return false;
+        *bOutSkipped = bSkipped;
     }
 
-    const FString BaseFileName = Asset->GetName();
-    OutFilePath = FPaths::Combine(OutputDirectory, BaseFileName + TEXT(".png"));
-
-    int32 CollisionIndex = 1;
-    while (IFileManager::Get().FileExists(*OutFilePath))
-    {
-        OutFilePath = FPaths::Combine(
-            OutputDirectory,
-            FString::Printf(TEXT("%s_%d.png"), *BaseFileName, CollisionIndex++));
-    }
-
-    const FImageView ImageView(
-        Pixels.GetData(),
-        Settings.OutputResolution,
-        Settings.OutputResolution,
-        1,
-        ERawImageFormat::BGRA8,
-        EGammaSpace::sRGB);
-    if (!FImageUtils::SaveImageByExtension(*OutFilePath, ImageView, 100))
-    {
-        OutError = FText::Format(
-            LOCTEXT("SaveFailed", "Failed to write PNG thumbnail:\n{0}"),
-            FText::FromString(OutFilePath));
-        OutFilePath.Reset();
-        return false;
-    }
-
-    return true;
+    return bSaved;
 }
 
 bool FEasyThumbnailGeneratorRenderer::GetAssetBounds(UObject* Asset, FBoxSphereBounds& OutBounds)
