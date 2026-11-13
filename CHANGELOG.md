@@ -21,7 +21,7 @@ The project follows semantic versioning where practical:
 ### Changed
 
 - `Generate Current` and `Generate All` share output handling for both file and Content Browser destinations.
-- Retained the v1.4.1 default output mode (PNG in `Saved/Thumbnails`) with no output prefix and Auto Increment naming.
+- Retained the v1.4.1 default output mode (PNG in `Saved/Thumbnails`) and Auto Increment naming; new settings now default to the `T_` output prefix (source-prefix removal remains configurable).
 
 ## [1.4.1] - 2026-10-09
 
