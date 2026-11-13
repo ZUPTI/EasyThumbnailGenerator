@@ -32,7 +32,7 @@ struct FEasyThumbnailGeneratorSavedPreset
     FString SourcePrefixToStrip;
 
     UPROPERTY()
-    FString OutputPrefix;
+    FString OutputPrefix = TEXT("T_");
 
     UPROPERTY()
     FString FilenameTemplate = TEXT("{Prefix}{BaseName}");
