@@ -141,11 +141,11 @@ Saved/Thumbnails/
 - `{BaseName}`: the original name after removing the configured **Source Prefix to Remove**, if it matches the start
 - `{Prefix}`: the new **Output Prefix**
 
-For example, set `Source Prefix to Remove = SM_`, `Output Prefix = T_` and keep the default template. Source mesh `SM_Rock` produces `T_Rock.png` and/or `/Game/Thumbnails/T_Rock`, **not** `T_SM_Rock`. If `SM_` is absent, the prefix is simply added to the unchanged source name.
+For example, set `Source Prefix to Remove = SM_` and keep the default `Output Prefix = T_` and filename template. Source mesh `SM_Rock` produces `T_Rock.png` and/or `/Game/Thumbnails/T_Rock`, **not** `T_SM_Rock`. If `SM_` is absent, the prefix is simply added to the unchanged source name.
 
 **Overwrite Policy**: `Auto Increment` (default, safe, adds `_1`, `_2`...), `Overwrite` (replaces the existing file or updates an existing `UTexture2D`), or `Skip Existing`. In **Both** mode, a collision on either destination triggers a common increment or skips both, ensuring matched names.
 
-**Saved presets** and last-used settings store all destination, template, prefix, mode, and overwrite preferences. Existing presets load with legacy defaults (PNG-only, empty prefixes, `Saved/Thumbnails`, Auto Increment). The render/camera settings remain independent of output paths.
+**Saved presets** and last-used settings store all destination, template, prefix, mode, and overwrite preferences. Newly created settings and older presets without these fields default to PNG-only, `Saved/Thumbnails`, an empty **Source Prefix to Remove**, `T_` **Output Prefix**, `{Prefix}{BaseName}`, and Auto Increment. An explicitly saved empty output prefix is preserved. The render/camera settings remain independent of output paths.
 
 ## Preview Workflow
 
@@ -265,7 +265,7 @@ Planned areas of work:
 - Overwrite policies: Auto Increment (default), Overwrite, Skip Existing
 - Generate native Unreal Engine **Texture assets** while keeping PNG export as the default
 - Output modes: **PNG / Texture Asset / Both**
-- Backward-compatible defaults: `Saved/Thumbnails`, empty prefixes, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
+- Defaults: `Saved/Thumbnails`, empty source prefix, `T_` output prefix, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
 
 ### 1.6.0 — Actor & Pose Support
 
