@@ -254,25 +254,25 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 
 ## Roadmap
 
-Planned areas of work:
+### Released
 
-### 1.5.0 — Output Workflow & Presets
+**1.5.0 — Output Workflow & Presets** (released 2026-11-13)
 
-- Custom PNG output directory and Unreal Engine Texture Asset destination (`/Game/...`)
-- Configurable source-prefix removal and output-prefix replacement ([Issue #5](https://github.com/ZUPTI/EasyThumbnailGenerator/issues/5)): for example, `SM_Rock` with source prefix `SM_` and output prefix `T_` becomes `T_Rock`, **not** `T_SM_Rock`
-- Filename templates with variables such as `{Prefix}` and `{BaseName}` (the asset name after removing the configured source prefix)
-- Save custom output directories, prefix rules and other output settings **per saved preset**, and restore them when a preset is loaded
-- Overwrite policies: Auto Increment (default), Overwrite, Skip Existing
-- Generate native Unreal Engine **Texture assets** while keeping PNG export as the default
-- Output modes: **PNG / Texture Asset / Both**
-- Defaults: `Saved/Thumbnails`, empty source prefix, `T_` output prefix, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
+- Custom PNG and Texture Asset output directories, with **PNG / Texture Asset / Both** output modes
+- Source-prefix replacement (`SM_Rock` → `T_Rock`), filename templates, and a default `T_` output prefix ([Issue #5](https://github.com/ZUPTI/EasyThumbnailGenerator/issues/5))
+- Per-preset output settings and automatic loading when selecting a saved preset
+- Auto Increment, Overwrite, and Skip Existing policies
 
-### 1.6.0 — Actor & Pose Support
+For full release details, see [CHANGELOG.md](CHANGELOG.md).
+
+### Planned
+
+**1.6.0 — Actor & Pose Support**
 
 - Blueprint / multi-mesh Actor thumbnail support
 - Skeletal Mesh pose / Animation Asset selection
 
-### 1.7.0 — Advanced Rendering
+**1.7.0 — Advanced Rendering**
 
 - Advanced post-processing controls and custom post-process material support
 - Advanced preview-environment profiles
