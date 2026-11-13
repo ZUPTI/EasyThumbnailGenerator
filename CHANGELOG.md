@@ -17,6 +17,7 @@ The project follows semantic versioning where practical:
 - Added source-prefix removal, output prefix and filename templates with `{AssetName}`, `{BaseName}` and `{Prefix}` tokens; for example, `SM_Rock` becomes `T_Rock`.
 - Added Auto Increment, Overwrite and Skip Existing collision policies for generated outputs.
 - Saved presets and last-used settings now include output destinations, modes, naming and collision behavior.
+- Selecting a saved preset in the dropdown now loads its settings and refreshes the preview automatically; internal Save/Rename selections do not trigger an unwanted reload.
 
 ### Changed
 
