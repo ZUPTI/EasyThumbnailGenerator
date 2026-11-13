@@ -227,24 +227,28 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 
 Planned areas of work:
 
-### 1.5.0 — Actor & Pose Support
+### 1.5.0 — Output Workflow & Presets
+
+- Custom PNG output directory and Unreal Engine Texture Asset destination (`/Game/...`)
+- Configurable source-prefix removal and output-prefix replacement ([Issue #5](https://github.com/ZUPTI/EasyThumbnailGenerator/issues/5)): for example, `SM_Rock` with source prefix `SM_` and output prefix `T_` becomes `T_Rock`, **not** `T_SM_Rock`
+- Filename templates with variables such as `{Prefix}` and `{BaseName}` (the asset name after removing the configured source prefix)
+- Save custom output directories, prefix rules and other output settings **per saved preset**, and restore them when a preset is loaded
+- Overwrite policies: Auto Increment (default), Overwrite, Skip Existing
+- Generate native Unreal Engine **Texture assets** while keeping PNG export as the default
+- Output modes: **PNG / Texture Asset / Both**
+- Backward-compatible defaults: `Saved/Thumbnails`, empty prefixes, `{Prefix}{BaseName}`, Auto Increment and PNG-only export; existing saved presets remain usable
+
+### 1.6.0 — Actor & Pose Support
 
 - Blueprint / multi-mesh Actor thumbnail support
 - Skeletal Mesh pose / Animation Asset selection
 
-### 1.6.0 — Advanced Rendering
+### 1.7.0 — Advanced Rendering
 
 - Advanced post-processing controls and custom post-process material support
 - Advanced preview-environment profiles
 - Further preview/output shading parity improvements for complex materials
 - Asset-type-specific Static Mesh LOD / Nanite controls
-
-### 1.7.0 — Output Workflow
-
-- Output folder and filename templates
-- Overwrite policy controls
-- Additional output target: save generated thumbnails as Unreal Engine **Texture assets** while keeping PNG export as the default
-- Optional output mode selection such as **PNG / Texture Asset / Both**
 
 ## Contributing
 
