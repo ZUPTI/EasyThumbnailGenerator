@@ -9,6 +9,13 @@ Use this checklist for every Easy Thumbnail Generator release.
 - [ ] Build the plugin against the maintained Unreal Engine version.
 - [ ] Verify compilation with **Unity Build enabled** and **non-Unity compilation**, where practical (including material-helper symbol collisions).
 - [ ] Test at least one Static Mesh and one Skeletal Mesh.
+- [ ] Verify Actor Blueprint menu entry appears for supported Actor Blueprints and not unrelated Blueprint types.
+- [ ] Verify Actor Blueprint previews and PNG/Texture output with multiple Static Mesh and Skeletal Mesh components, offsets, rotations and material overrides.
+- [ ] Confirm Actor bounds exclude invisible/unassigned mesh components and empty Actors fail with a clear message.
+- [ ] Verify reference pose, selected Animation Asset and nonzero animation time on Skeletal Mesh assets.
+- [ ] Verify the same pose in live preview vs Generate Current and Generate All; check incompatible skeleton handling.
+- [ ] Verify pose settings persist through saved presets and Last Used, including selecting presets from the dropdown.
+- [ ] Verify the preview Actor is destroyed on asset changes and no Actor is spawned into the editor gameplay level.
 - [ ] Test `Generate Current` and transparent alpha output.
 - [ ] Verify **Fixed EV100** changes match between the live preview and exported PNG.
 - [ ] Verify skylight intensity changes match between the live preview and exported PNG.

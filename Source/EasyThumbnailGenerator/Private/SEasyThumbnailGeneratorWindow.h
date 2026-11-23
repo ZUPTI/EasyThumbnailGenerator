@@ -10,6 +10,7 @@
 #include "UObject/UnrealType.h"
 
 class FPreviewScene;
+class AActor;
 class IDetailsView;
 class SEditableTextBox;
 class UPrimitiveComponent;
@@ -40,6 +41,9 @@ private:
     TWeakPtr<SEditorViewport> ViewportWidget;
     FPreviewScene& PreviewScene;
     TObjectPtr<UPrimitiveComponent> PreviewComponent;
+    TWeakObjectPtr<AActor> PreviewActor;
+    FBoxSphereBounds PreviewActorBounds;
+    bool bHasPreviewActorBounds = false;
     TWeakObjectPtr<UObject> Asset;
     FEasyThumbnailGeneratorRenderSettings CurrentSettings;
 };

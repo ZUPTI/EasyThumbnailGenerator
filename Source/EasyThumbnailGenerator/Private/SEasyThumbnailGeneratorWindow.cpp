@@ -4,6 +4,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorActorUtils.h"
 #include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorMaterialUtils.h"
@@ -15,6 +16,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "GameFramework/Actor.h"
 #include "IDetailsView.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
@@ -244,7 +246,30 @@ void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
         return;
     }
 
-    PreviewComponent = BuildPreviewComponent(InAsset);
+    if (EasyThumbnailGenerator::IsSupportedActorBlueprint(InAsset))
+    {
+        PreviewActor = EasyThumbnailGenerator::SpawnPreviewActor(
+            InAsset, PreviewScene.GetWorld());
+
+        if (PreviewActor.IsValid())
+        {
+            EasyThumbnailGenerator::ApplyPoseToActor(PreviewActor.Get(), CurrentSettings);
+            bHasPreviewActorBounds = EasyThumbnailGenerator::GetActorMeshBounds(
+                PreviewActor.Get(), PreviewActorBounds);
+
+            if (bHasPreviewActorBounds)
+            {
+                PreviewActor->SetActorLocation(
+                    -EasyThumbnailGenerator::GetFramingCenter(
+                        PreviewActorBounds, CurrentSettings));
+            }
+        }
+    }
+    else
+    {
+        PreviewComponent = BuildPreviewComponent(InAsset);
+    }
+
     if (PreviewComponent)
     {
         FBoxSphereBounds Bounds;
@@ -267,8 +292,8 @@ void FEasyThumbnailGeneratorViewportClient::SetAsset(UObject* InAsset)
 
         if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(PreviewComponent))
         {
-            SkeletalMeshComponent->RefreshBoneTransforms();
-            SkeletalMeshComponent->UpdateComponentToWorld();
+            EasyThumbnailGenerator::ApplyPoseToSkeletalMesh(
+                SkeletalMeshComponent, CurrentSettings);
         }
 
         PreviewComponent->MarkRenderStateDirty();
@@ -324,6 +349,12 @@ bool FEasyThumbnailGeneratorViewportClient::GetAssetBounds(FBoxSphereBounds& Out
         return true;
     }
 
+    if (PreviewActor.IsValid() && bHasPreviewActorBounds)
+    {
+        OutBounds = PreviewActorBounds;
+        return true;
+    }
+
     return false;
 }
 
@@ -360,13 +391,39 @@ void FEasyThumbnailGeneratorViewportClient::ClearPreviewComponent()
         PreviewScene.RemoveComponent(PreviewComponent);
         PreviewComponent = nullptr;
     }
+
+    if (PreviewActor.IsValid())
+    {
+        PreviewActor->Destroy();
+        PreviewActor.Reset();
+    }
+    bHasPreviewActorBounds = false;
 }
 
 void FEasyThumbnailGeneratorViewportClient::UpdatePreviewTransform()
 {
+    if (PreviewActor.IsValid())
+    {
+        EasyThumbnailGenerator::ApplyPoseToActor(PreviewActor.Get(), CurrentSettings);
+        bHasPreviewActorBounds = EasyThumbnailGenerator::GetActorMeshBounds(
+            PreviewActor.Get(), PreviewActorBounds);
+        if (bHasPreviewActorBounds)
+        {
+            PreviewActor->SetActorLocation(
+                -EasyThumbnailGenerator::GetFramingCenter(
+                    PreviewActorBounds, CurrentSettings));
+        }
+        return;
+    }
+
     if (!PreviewComponent)
     {
         return;
+    }
+
+    if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(PreviewComponent))
+    {
+        EasyThumbnailGenerator::ApplyPoseToSkeletalMesh(SkeletalMeshComponent, CurrentSettings);
     }
 
     FBoxSphereBounds Bounds;
@@ -926,7 +983,9 @@ void SEasyThumbnailGeneratorWindow::HandleSettingsChanged(const FPropertyChanged
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraYaw) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, CameraPitch) ||
         ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, PerspectiveFOV) ||
-        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FramePaddingPercent);
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, FramePaddingPercent) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, AnimationAsset) ||
+        ChangedPropertyName == GET_MEMBER_NAME_CHECKED(UEasyThumbnailGeneratorSessionSettings, AnimationTimeSeconds);
 
     RefreshViewport(bCameraRelatedChange);
     PersistLastUsedSettings();

@@ -25,6 +25,8 @@ void FEasyThumbnailGeneratorSavedPreset::FromRenderSettings(const FEasyThumbnail
     SkyLightIntensity = Settings.SkyLightIntensity;
     bUseManualExposure = Settings.bUseManualExposure;
     ExposureCompensation = Settings.ExposureCompensation;
+    AnimationAsset = Settings.AnimationAsset;
+    AnimationTimeSeconds = Settings.AnimationTimeSeconds;
 }
 
 FEasyThumbnailGeneratorRenderSettings FEasyThumbnailGeneratorSavedPreset::ToRenderSettings() const
@@ -53,6 +55,8 @@ FEasyThumbnailGeneratorRenderSettings FEasyThumbnailGeneratorSavedPreset::ToRend
     Settings.SkyLightIntensity = SkyLightIntensity;
     Settings.bUseManualExposure = bUseManualExposure;
     Settings.ExposureCompensation = ExposureCompensation;
+    Settings.AnimationAsset = AnimationAsset;
+    Settings.AnimationTimeSeconds = AnimationTimeSeconds;
     return Settings;
 }
 
