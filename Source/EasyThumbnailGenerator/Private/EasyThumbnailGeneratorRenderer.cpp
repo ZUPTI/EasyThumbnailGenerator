@@ -1,4 +1,5 @@
 #include "EasyThumbnailGeneratorRenderer.h"
+#include "EasyThumbnailGeneratorActorUtils.h"
 #include "EasyThumbnailGeneratorFraming.h"
 #include "EasyThumbnailGeneratorGeometryFraming.h"
 #include "EasyThumbnailGeneratorMaterialUtils.h"
@@ -48,7 +49,7 @@ bool FEasyThumbnailGeneratorRenderer::GenerateThumbnail(
     FBoxSphereBounds AssetBounds;
     if (!GetAssetBounds(Asset, AssetBounds))
     {
-        OutError = LOCTEXT("UnsupportedAsset", "Only Static Mesh and Skeletal Mesh assets are supported.");
+        OutError = LOCTEXT("UnsupportedAsset", "Only Static Mesh, Skeletal Mesh, and Actor Blueprint assets are supported.");
         return false;
     }
 
@@ -84,6 +85,13 @@ bool FEasyThumbnailGeneratorRenderer::GetAssetBounds(UObject* Asset, FBoxSphereB
         return true;
     }
 
+    if (EasyThumbnailGenerator::IsSupportedActorBlueprint(Asset))
+    {
+        // Real combined bounds are evaluated in the transient preview world.
+        OutBounds = FBoxSphereBounds(FVector::ZeroVector, FVector(1.0f), 1.0f);
+        return true;
+    }
+
     return false;
 }
 
@@ -108,9 +116,34 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
     PreviewScene.SetLightDirection(FRotator(Settings.DirectionalLightPitch, Settings.DirectionalLightYaw, 0.0f));
     EasyThumbnailGenerator::ApplyPreviewSkyLightIntensity(PreviewScene, Settings.SkyLightIntensity);
 
+    FBoxSphereBounds EffectiveBounds = AssetBounds;
+    AActor* PreviewActor = nullptr;
     UPrimitiveComponent* MeshComponent = nullptr;
 
-    if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(Asset))
+    if (EasyThumbnailGenerator::IsSupportedActorBlueprint(Asset))
+    {
+        PreviewActor = EasyThumbnailGenerator::SpawnPreviewActor(
+            Asset, PreviewScene.GetWorld());
+        if (!PreviewActor)
+        {
+            OutError = LOCTEXT("ActorSpawnFailed",
+                "Could not spawn this Actor Blueprint in the thumbnail preview world.");
+            return false;
+        }
+
+        EasyThumbnailGenerator::ApplyPoseToActor(PreviewActor, Settings);
+        if (!EasyThumbnailGenerator::GetActorMeshBounds(PreviewActor, EffectiveBounds))
+        {
+            OutError = LOCTEXT("ActorHasNoMesh",
+                "Actor Blueprint has no visible Static Mesh or Skeletal Mesh components.");
+            return false;
+        }
+
+        // Preserve relative component offsets while framing the whole Actor.
+        PreviewActor->SetActorLocation(
+            -EasyThumbnailGenerator::GetFramingCenter(EffectiveBounds, Settings));
+    }
+    else if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(Asset))
     {
         UStaticMeshComponent* StaticMeshComponent = NewObject<UStaticMeshComponent>(GetTransientPackage());
         StaticMeshComponent->SetStaticMesh(StaticMesh);
@@ -126,7 +159,6 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
         USkeletalMeshComponent* SkeletalMeshComponent = NewObject<USkeletalMeshComponent>(GetTransientPackage());
         SkeletalMeshComponent->SetSkeletalMeshAsset(SkeletalMesh);
         EasyThumbnailGenerator::ApplySkeletalMeshMaterials(SkeletalMeshComponent, SkeletalMesh);
-        SkeletalMeshComponent->bForceRefpose = true;
         SkeletalMeshComponent->SetMobility(EComponentMobility::Movable);
         SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         SkeletalMeshComponent->bCastDynamicShadow = true;
@@ -134,42 +166,46 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
         MeshComponent = SkeletalMeshComponent;
     }
 
-    if (!MeshComponent)
+    if (!PreviewActor && !MeshComponent)
     {
         OutError = LOCTEXT("MeshComponentFailed", "Failed to create a preview component for the selected asset.");
         return false;
     }
 
-    MeshComponent->SetCastShadow(true);
-    if (UMeshComponent* MeshComponentBase = Cast<UMeshComponent>(MeshComponent))
+    if (MeshComponent)
     {
-        MeshComponentBase->SetTextureForceResidentFlag(true);
-    }
-    MeshComponent->UpdateBounds();
+        MeshComponent->SetCastShadow(true);
+        if (UMeshComponent* MeshComponentBase = Cast<UMeshComponent>(MeshComponent))
+        {
+            MeshComponentBase->SetTextureForceResidentFlag(true);
+        }
+        MeshComponent->UpdateBounds();
 
-    const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(AssetBounds, Settings);
-    const FTransform MeshTransform(FQuat::Identity, -FrameCenter);
-    PreviewScene.AddComponent(MeshComponent, MeshTransform, false);
+        const FVector FrameCenter = EasyThumbnailGenerator::GetFramingCenter(EffectiveBounds, Settings);
+        PreviewScene.AddComponent(
+            MeshComponent, FTransform(FQuat::Identity, -FrameCenter), false);
 
-    if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(MeshComponent))
-    {
-        SkeletalMeshComponent->RefreshBoneTransforms();
-        SkeletalMeshComponent->UpdateComponentToWorld();
+        if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(MeshComponent))
+        {
+            EasyThumbnailGenerator::ApplyPoseToSkeletalMesh(SkeletalMeshComponent, Settings);
+        }
+
+        MeshComponent->MarkRenderStateDirty();
+        MeshComponent->UpdateBounds();
+        if (UMeshComponent* MeshComponentBase = Cast<UMeshComponent>(MeshComponent))
+        {
+            MeshComponentBase->PrestreamTextures(30.0f, true, 0);
+        }
     }
 
-    MeshComponent->MarkRenderStateDirty();
-    MeshComponent->UpdateBounds();
-    if (UMeshComponent* MeshComponentBase = Cast<UMeshComponent>(MeshComponent))
-    {
-        MeshComponentBase->PrestreamTextures(30.0f, true, 0);
-    }
     PreviewScene.GetWorld()->Tick(LEVELTICK_All, 0.0f);
     PreviewScene.GetWorld()->SendAllEndOfFrameUpdates();
     FlushRenderingCommands();
     PreviewScene.UpdateCaptureContents();
 
     const FBoxSphereBounds FrameRelativeBounds =
-        EasyThumbnailGenerator::MakeFrameRelativeBounds(AssetBounds, Settings, MinimumBoundsExtent);
+        EasyThumbnailGenerator::MakeFrameRelativeBounds(
+            EffectiveBounds, Settings, MinimumBoundsExtent);
 
     const float PaddingMultiplier = 1.0f + (FMath::Max(Settings.FramePaddingPercent, 0.0f) * 0.01f);
 
@@ -193,7 +229,7 @@ bool FEasyThumbnailGeneratorRenderer::RenderAsset(
         if (EasyThumbnailGenerator::CalculateGeometryAwareFit(
                 Asset,
                 MeshComponent,
-                AssetBounds,
+                EffectiveBounds,
                 Settings,
                 CameraRotation,
                 1.0f,
