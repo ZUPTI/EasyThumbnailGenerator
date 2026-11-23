@@ -8,6 +8,20 @@ The project follows semantic versioning where practical:
 - **Minor** releases add backwards-compatible features.
 - **Major** releases may introduce breaking workflow or API changes.
 
+## [1.6.0] - Unreleased
+
+### Added
+
+- Added **Actor Blueprint** thumbnail generation for Actors containing one or more visible Static Mesh or Skeletal Mesh components.
+- Added combined bounds framing for multi-component Actors, preserving their relative mesh transforms.
+- Added **Animation Asset** and **Animation Time (seconds)** pose controls for Skeletal Mesh thumbnails and the Skeletal Mesh components of Actor Blueprints.
+- Added deterministic reference-pose fallback when no animation is selected or the animation uses a different skeleton.
+- Pose settings are included in saved presets and last-used settings.
+
+### Changed
+
+- Updated the Content Browser menu to **Create Thumbnail...**, reflecting both the additional Actor Blueprint input type and the existing PNG / Texture Asset / Both output modes.
+
 ## [1.5.0] - 2026-11-13
 
 ### Added
