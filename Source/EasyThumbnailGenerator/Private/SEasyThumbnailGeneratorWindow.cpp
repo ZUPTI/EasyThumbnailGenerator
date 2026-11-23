@@ -16,6 +16,7 @@
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Notifications/NotificationManager.h"
+#include "GameFramework/Actor.h"
 #include "IDetailsView.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInterface.h"
