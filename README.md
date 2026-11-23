@@ -3,7 +3,7 @@
 Native Unreal Engine editor plugin by **ZUPTI** for generating PNG and Unreal Texture Asset thumbnails from **Static Mesh**, **Skeletal Mesh**, and **Actor Blueprint** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.6.0 (development)  
+> **Current version:** 1.6.0  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -129,7 +129,7 @@ Regenerate project files if needed, then build your Editor target with Unreal En
 Saved/Thumbnails/
 ```
 
-## Actor Blueprints & Skeletal Pose (v1.6.0 development)
+## Actor Blueprints & Skeletal Pose (v1.6.0)
 
 **Actor Blueprints:** Right-click an Actor Blueprint asset and choose **Create Thumbnail...**. The plugin instantiates a temporary copy inside its isolated editor preview world and frames the combined bounds of the visible Static Mesh / Skeletal Mesh components. Relative component positions, rotations, scale and authored material overrides are preserved. The temporary Actor is not placed in the current editor level. Actor Blueprints must contain at least one visible supported mesh component; other Blueprint asset types are not supported.
 
@@ -277,14 +277,15 @@ See [`CHANGELOG.md`](CHANGELOG.md) for version-by-version release notes. Maintai
 - Per-preset output settings and automatic loading when selecting a saved preset
 - Auto Increment, Overwrite, and Skip Existing policies
 
+**1.6.0 — Actor & Pose Support** (released 2026-11-23)
+
+- Multi-mesh Actor Blueprint thumbnails using combined visible mesh-component bounds while preserving component transforms and materials
+- Skeletal Mesh reference-pose or Animation Asset selection with fixed-time sampling, for standalone meshes and supported Actor components
+- Animation choice and sample time saved with named presets and Last Used settings
+
 For full release details, see [CHANGELOG.md](CHANGELOG.md).
 
 ### Planned
-
-**1.6.0 — Actor & Pose Support** (in development)
-
-- Blueprint / multi-mesh Actor thumbnail support
-- Skeletal Mesh reference pose / Animation Asset selection and fixed-time sampling
 
 **1.7.0 — Advanced Rendering**
 
