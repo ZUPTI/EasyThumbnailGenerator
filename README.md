@@ -1,9 +1,9 @@
 # Easy Thumbnail Generator
 
-Native Unreal Engine editor plugin by **ZUPTI** for generating transparent PNG thumbnails from **Static Mesh** and **Skeletal Mesh** assets.
+Native Unreal Engine editor plugin by **ZUPTI** for generating PNG and Unreal Texture Asset thumbnails from **Static Mesh**, **Skeletal Mesh**, and **Actor Blueprint** assets.
 
 > **Target:** Unreal Engine 5.8  
-> **Current version:** 1.5.0  
+> **Current version:** 1.6.0 (development)  
 > **Type:** Editor-only C++ plugin  
 > **License:** MIT
 
@@ -15,7 +15,7 @@ The weapon shown in the preview is **Krait**, an in-game rifle from [**Kanka**](
 
 ## Overview
 
-Easy Thumbnail Generator adds **Create PNG Thumbnail...** to the Content Browser context menu for Static Mesh and Skeletal Mesh assets.
+Easy Thumbnail Generator adds **Create Thumbnail...** to the Content Browser context menu for Static Mesh, Skeletal Mesh and Actor Blueprint assets.
 
 The action opens a live editor preview where you can frame the asset, switch camera angles, tune lighting/exposure, save reusable presets, and generate transparent PNG thumbnails without leaving Unreal Editor.
 
@@ -36,7 +36,8 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
 ## Features
 
 - Unreal Engine 5.8 native C++ editor plugin
-- Static Mesh and Skeletal Mesh support
+- Static Mesh, Skeletal Mesh and multi-mesh Actor Blueprint support
+- Skeletal reference pose or a selected Animation Asset sampled at a fixed time (saved with presets)
 - Content Browser right-click integration with a camera-style action icon
 - Live 3D preview before export
 - Transparent PNG output, native Unreal Texture2D asset output, or both together
@@ -75,6 +76,7 @@ The image above is a generated transparent thumbnail of **Krait** using the plug
   - source prefix to remove, output prefix and filename template
   - overwrite policy
   - output resolution
+  - Animation Asset and Animation Time for Skeletal Mesh pose selection
   - frame padding
   - framing mode and custom framing offset
   - live bounds visualization
@@ -113,8 +115,8 @@ Regenerate project files if needed, then build your Editor target with Unreal En
 ## Usage
 
 1. Open the Content Browser.
-2. Select one or more **Static Mesh** or **Skeletal Mesh** assets.
-3. Right-click and choose **Create PNG Thumbnail...**.
+2. Select one or more **Static Mesh**, **Skeletal Mesh**, or **Actor Blueprint** assets.
+3. Right-click and choose **Create Thumbnail...**.
 4. Adjust the live preview.
 5. Optionally use a built-in preset, camera shortcut, or saved user preset.
 6. Click **Fit to Frame** when you want automatic framing.
@@ -126,6 +128,16 @@ Regenerate project files if needed, then build your Editor target with Unreal En
 ```text
 Saved/Thumbnails/
 ```
+
+## Actor Blueprints & Skeletal Pose (v1.6.0 development)
+
+**Actor Blueprints:** Right-click an Actor Blueprint asset and choose **Create Thumbnail...**. The plugin instantiates a temporary copy inside its isolated editor preview world and frames the combined bounds of the visible Static Mesh / Skeletal Mesh components. Relative component positions, rotations, scale and authored material overrides are preserved. The temporary Actor is not placed in the current editor level. Actor Blueprints must contain at least one visible supported mesh component; other Blueprint asset types are not supported.
+
+**Skeletal pose:** Under **Pose** in the Details panel, leave **Animation Asset** empty for the reference pose, or select an Animation Asset and set **Animation Time (seconds)**. The specified animation is sampled at a fixed time (clamped to the asset duration); it does not play continuously. It must use the selected Skeletal Mesh's skeleton. The same pose settings are used for Skeletal Mesh assets and for matching Skeletal Mesh components in Actor Blueprints. The sampled pose is shared between preview, Generate Current and Generate All.
+
+**Bounds and framing:** Individual Static Mesh / Skeletal Mesh assets retain geometry-aware Fit to Frame. Multi-mesh Actor Blueprints use the union of their visible mesh-component bounds for Fit to Frame. Construction scripts can execute when the temporary Actor is spawned, so avoid relying on game-world-specific runtime behavior for thumbnail-only Actor previews.
+
+Pose and sample time are saved in named presets and Last Used settings, alongside camera and output options.
 
 ## Output Workflow (v1.5.0)
 
@@ -193,7 +205,7 @@ For materials whose normal SceneColor alpha does not provide usable coverage (no
 
 ## Multi-Selection
 
-When multiple supported meshes are selected, use the `<` and `>` buttons to inspect them individually.
+When multiple supported assets are selected, use the `<` and `>` buttons to inspect them individually.
 
 Example output:
 
@@ -223,6 +235,8 @@ EasyThumbnailGenerator/
         │   ├── EasyThumbnailGeneratorSessionSettings.h
         │   └── EasyThumbnailGeneratorUserSettings.h
         └── Private/
+            ├── EasyThumbnailGeneratorActorUtils.cpp
+            ├── EasyThumbnailGeneratorActorUtils.h
             ├── EasyThumbnailGeneratorModule.cpp
             ├── EasyThumbnailGeneratorRenderer.cpp
             ├── EasyThumbnailGeneratorFraming.h
@@ -267,10 +281,10 @@ For full release details, see [CHANGELOG.md](CHANGELOG.md).
 
 ### Planned
 
-**1.6.0 — Actor & Pose Support**
+**1.6.0 — Actor & Pose Support** (in development)
 
 - Blueprint / multi-mesh Actor thumbnail support
-- Skeletal Mesh pose / Animation Asset selection
+- Skeletal Mesh reference pose / Animation Asset selection and fixed-time sampling
 
 **1.7.0 — Advanced Rendering**
 
@@ -285,7 +299,7 @@ Issues and pull requests are welcome. For rendering or build issues, please incl
 
 - Unreal Engine version
 - Plugin version
-- Asset type (Static Mesh or Skeletal Mesh)
+- Asset type (Static Mesh, Skeletal Mesh or Actor Blueprint)
 - Relevant build/editor log
 - Preview and generated-output screenshots when the issue is visual
 
