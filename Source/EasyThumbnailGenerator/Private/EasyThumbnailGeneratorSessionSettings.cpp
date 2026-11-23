@@ -13,6 +13,8 @@ UEasyThumbnailGeneratorSessionSettings::UEasyThumbnailGeneratorSessionSettings()
     OutputPrefix = TEXT("T_");
     FilenameTemplate = TEXT("{Prefix}{BaseName}");
     FramePaddingPercent = 5.0f;
+    AnimationAsset.Reset();
+    AnimationTimeSeconds = 0.0f;
 }
 
 void UEasyThumbnailGeneratorSessionSettings::ApplyPreset(EEasyThumbnailGeneratorPreset InPreset)
@@ -102,6 +104,8 @@ void UEasyThumbnailGeneratorSessionSettings::ApplyRenderSettings(
     SkyLightIntensity = Settings.SkyLightIntensity;
     bUseManualExposure = Settings.bUseManualExposure;
     ExposureCompensation = Settings.ExposureCompensation;
+    AnimationAsset = Settings.AnimationAsset;
+    AnimationTimeSeconds = Settings.AnimationTimeSeconds;
 }
 
 FEasyThumbnailGeneratorRenderSettings UEasyThumbnailGeneratorSessionSettings::MakeRenderSettings() const
@@ -130,5 +134,7 @@ FEasyThumbnailGeneratorRenderSettings UEasyThumbnailGeneratorSessionSettings::Ma
     Settings.SkyLightIntensity = SkyLightIntensity;
     Settings.bUseManualExposure = bUseManualExposure;
     Settings.ExposureCompensation = ExposureCompensation;
+    Settings.AnimationAsset = AnimationAsset;
+    Settings.AnimationTimeSeconds = AnimationTimeSeconds;
     return Settings;
 }
