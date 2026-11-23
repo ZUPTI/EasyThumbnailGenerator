@@ -1,6 +1,8 @@
 #include "EasyThumbnailGeneratorModule.h"
 
 #include "ContentBrowserMenuContexts.h"
+#include "Engine/Blueprint.h"
+#include "GameFramework/Actor.h"
 #include "Engine/SkeletalMesh.h"
 #include "Engine/StaticMesh.h"
 #include "Framework/Application/SlateApplication.h"
@@ -47,12 +49,28 @@ namespace EasyThumbnailGenerator
 
         const FTopLevelAssetPath StaticMeshClassPath = UStaticMesh::StaticClass()->GetClassPathName();
         const FTopLevelAssetPath SkeletalMeshClassPath = USkeletalMesh::StaticClass()->GetClassPathName();
+        const FTopLevelAssetPath BlueprintClassPath = UBlueprint::StaticClass()->GetClassPathName();
 
         for (const FAssetData& AssetData : Context->SelectedAssets)
         {
-            if (AssetData.AssetClassPath == StaticMeshClassPath || AssetData.AssetClassPath == SkeletalMeshClassPath)
+            if (AssetData.AssetClassPath == StaticMeshClassPath ||
+                AssetData.AssetClassPath == SkeletalMeshClassPath)
             {
                 SupportedAssets.Add(AssetData);
+                continue;
+            }
+
+            // Only Actor Blueprints are supported; widgets and other Blueprint
+            // asset types should not appear in this thumbnail workflow.
+            if (AssetData.AssetClassPath == BlueprintClassPath)
+            {
+                const UBlueprint* Blueprint = Cast<UBlueprint>(AssetData.GetAsset());
+                if (Blueprint && Blueprint->GeneratedClass &&
+                    Blueprint->GeneratedClass->IsChildOf(AActor::StaticClass()) &&
+                    !Blueprint->GeneratedClass->HasAnyClassFlags(CLASS_Abstract))
+                {
+                    SupportedAssets.Add(AssetData);
+                }
             }
         }
 
@@ -63,8 +81,8 @@ namespace EasyThumbnailGenerator
 
         Section.AddMenuEntry(
             TEXT("EasyThumbnailGenerator_CreatePNGThumbnail"),
-            LOCTEXT("CreatePNGThumbnail", "Create PNG Thumbnail..."),
-            LOCTEXT("CreatePNGThumbnailTooltip", "Open the Easy Thumbnail Generator preview window for the selected mesh assets."),
+            LOCTEXT("CreatePNGThumbnail", "Create Thumbnail..."),
+            LOCTEXT("CreatePNGThumbnailTooltip", "Open the thumbnail preview for Static Mesh, Skeletal Mesh, and Actor Blueprint assets."),
             FSlateIcon(FAppStyle::GetAppStyleSetName(), TEXT("ClassIcon.CameraActor")),
             FUIAction(FExecuteAction::CreateLambda([SupportedAssets = MoveTemp(SupportedAssets)]()
             {
@@ -98,6 +116,7 @@ void FEasyThumbnailGeneratorModule::RegisterMenus()
 
     ExtendAssetMenu(TEXT("ContentBrowser.AssetContextMenu.StaticMesh"));
     ExtendAssetMenu(TEXT("ContentBrowser.AssetContextMenu.SkeletalMesh"));
+    ExtendAssetMenu(TEXT("ContentBrowser.AssetContextMenu.Blueprint"));
 }
 
 void FEasyThumbnailGeneratorModule::ExtendAssetMenu(const FName MenuName)
