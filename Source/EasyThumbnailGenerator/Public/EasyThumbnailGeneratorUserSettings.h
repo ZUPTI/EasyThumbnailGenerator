@@ -82,6 +82,12 @@ struct FEasyThumbnailGeneratorSavedPreset
     UPROPERTY()
     float ExposureCompensation = 1.0f;
 
+    UPROPERTY()
+    TSoftObjectPtr<UAnimationAsset> AnimationAsset;
+
+    UPROPERTY()
+    float AnimationTimeSeconds = 0.0f;
+
     void FromRenderSettings(const FEasyThumbnailGeneratorRenderSettings& Settings);
     FEasyThumbnailGeneratorRenderSettings ToRenderSettings() const;
 };
