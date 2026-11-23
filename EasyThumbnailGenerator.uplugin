@@ -3,7 +3,7 @@
   "Version": 12,
   "VersionName": "1.6.0",
   "FriendlyName": "Easy Thumbnail Generator",
-  "Description": "Live-preview transparent PNG thumbnail generator for Static Mesh and Skeletal Mesh assets, with reusable presets and batch generation.",
+  "Description": "Editor thumbnail generator for Static Mesh, Skeletal Mesh and multi-mesh Actor Blueprints, with animation pose selection, live preview, presets and PNG/Texture Asset export.",
   "Category": "ZUPTI",
   "CreatedBy": "ZUPTI",
   "CanContainContent": false,
