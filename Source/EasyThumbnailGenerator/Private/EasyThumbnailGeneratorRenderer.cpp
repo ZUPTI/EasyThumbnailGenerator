@@ -15,6 +15,7 @@
 #include "Engine/StaticMesh.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "HAL/FileManager.h"
+#include "GameFramework/Actor.h"
 #include "ImageCore.h"
 #include "ImageUtils.h"
 #include "Materials/MaterialInterface.h"
