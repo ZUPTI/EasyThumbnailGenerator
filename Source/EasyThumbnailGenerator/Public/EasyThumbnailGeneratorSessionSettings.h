@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Animation/AnimationAsset.h"
 #include "UObject/Object.h"
 #include "EasyThumbnailGeneratorSessionSettings.generated.h"
 
@@ -71,6 +72,10 @@ struct FEasyThumbnailGeneratorRenderSettings
     bool bUseManualExposure = true;
     // Fixed editor-style EV100 used by both the live preview and final capture.
     float ExposureCompensation = 1.0f;
+
+    // A selected Animation Asset is sampled at a fixed time. Empty means reference pose.
+    TSoftObjectPtr<UAnimationAsset> AnimationAsset;
+    float AnimationTimeSeconds = 0.0f;
 
     // When true, generation uses the exact viewport camera instead of auto fitting.
     // This is used by Generate Current to keep the PNG framing close to the live preview.
@@ -159,6 +164,12 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Post Process", meta=(DisplayName="Fixed EV100", ClampMin="-6.0", ClampMax="12.0", UIMin="-6.0", UIMax="12.0", EditCondition="bUseManualExposure", EditConditionHides, ToolTip="Fixed EV100 used consistently by the live preview and exported PNG."))
     float ExposureCompensation;
+
+    UPROPERTY(EditAnywhere, Category="Pose", meta=(DisplayName="Animation Asset", ToolTip="Optional animation to sample for Skeletal Mesh assets or Skeletal Mesh components in Actor Blueprints. Empty selects reference pose."))
+    TSoftObjectPtr<UAnimationAsset> AnimationAsset;
+
+    UPROPERTY(EditAnywhere, Category="Pose", meta=(DisplayName="Animation Time (seconds)", ClampMin="0.0", UIMin="0.0", ToolTip="Time in seconds to sample the selected animation; clamped to animation length."))
+    float AnimationTimeSeconds;
 
     void ApplyPreset(EEasyThumbnailGeneratorPreset InPreset);
     void ApplyRenderSettings(const FEasyThumbnailGeneratorRenderSettings& Settings, EEasyThumbnailGeneratorPreset InPreset = EEasyThumbnailGeneratorPreset::Custom);
